@@ -66,8 +66,10 @@ const cancelEdit = () => {
 };
 
 const saveEdit = async () => {
-  if (!editForm.nickname || !editForm.name || !editForm.phoneNumber || !editForm.birthDate) {
-    errorMessage.value = '모든 필수 항목을 입력해 주세요.';
+  // 닉네임은 필수 값이므로 비워두고 저장하는 것만 막습니다.
+  // (수정하지 않고 그대로 두어도 editForm.nickname에 기존 이름이 들어있어 통과됩니다)
+  if (!editForm.nickname.trim()) {
+    errorMessage.value = '닉네임을 입력해 주세요.';
     return;
   }
 
