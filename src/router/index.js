@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import Auth from '../views/Auth.vue';
+import MyPage from '../views/MyPage.vue';
 import { useAuthStore } from '../stores/auth';
 
 const routes = [
@@ -13,6 +14,11 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Auth
+  },
+  {
+    path: '/mypage',
+    name: 'MyPage',
+    component: MyPage
   }
 ];
 

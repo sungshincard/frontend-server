@@ -5,7 +5,8 @@ const apiClient = axios.create({
   baseURL: 'http://localhost:8080/api', // Backend server URL
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true
 });
 
 // Request interceptor to add auth token

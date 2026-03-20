@@ -19,6 +19,7 @@ const handleLogout = () => {
         <nav class="nav-links">
           <router-link to="/">Home</router-link>
           <template v-if="authStore.isAuthenticated">
+            <router-link to="/mypage">My Page</router-link>
             <button class="nav-btn" @click="handleLogout">Logout</button>
           </template>
           <template v-else>
