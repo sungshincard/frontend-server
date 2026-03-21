@@ -1,146 +1,369 @@
 <script setup>
-// Home Component
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { latestListings, recentTrades, risingCards } from '../data/catalog'
+
+const router = useRouter()
+
+const slides = [
+  {
+    title: '스칼렛&바이올렛 하이라이트',
+    subtitle: '신규 세트 · 인기 카드 · 빠른 거래 진입',
+    description: '이번 주 주목받는 카드와 새로 등록된 출품을 메인에서 바로 확인합니다.',
+  },
+  {
+    title: '신규 세트 프리뷰',
+    subtitle: '출시 예정 카드와 미리 보는 희귀 카드',
+    description: '출시 예정 상품과 사전 관심 카드 흐름을 홈에서 분리해 보여줍니다.',
+  },
+]
+
+const currentSlide = ref(0)
+
+const collections = [
+  { title: '새로 출품된 카드', items: latestListings },
+  { title: '새로 출시된 카드', items: recentTrades },
+  { title: '현재 시세보다 저렴한 카드', items: latestListings.slice().reverse() },
+]
+
+const spotlightItems = computed(() =>
+  risingCards.map((item) => ({
+    ...item,
+    label: '현재 주목받는 카드',
+  }))
+)
+
+const nextSlide = () => {
+  currentSlide.value = (currentSlide.value + 1) % slides.length
+}
+
+const prevSlide = () => {
+  currentSlide.value = (currentSlide.value - 1 + slides.length) % slides.length
+}
+
+const goCards = () => router.push('/cards')
+const activeSlide = computed(() => slides[currentSlide.value])
 </script>
 
 <template>
-  <div class="home">
-    <!-- Hero Banner -->
-    <section class="hero">
-      <div class="hero-content">
-        <h1>PREMIUM CARDS<br>AUTHENTICATED TRADING</h1>
-        <p>Buy and sell the rarest cards with confidence.</p>
-        <button class="btn-primary shop-now-btn">Shop Now</button>
+  <div class="home-page">
+    <section class="hero-slider container">
+      <button type="button" class="slider-arrow left" @click="prevSlide">‹</button>
+
+      <div class="slider-stage">
+        <div class="slider-copy">
+          <p class="eyebrow">Pokemon Card Marketplace</p>
+          <h1>{{ activeSlide.title }}</h1>
+          <strong>{{ activeSlide.subtitle }}</strong>
+          <p>{{ activeSlide.description }}</p>
+          <button type="button" class="hero-button" @click="goCards">바로 보기</button>
+        </div>
+
+        <div class="slider-visual">
+          <div class="visual-card tall dark"></div>
+          <div class="visual-card shirt"></div>
+          <div class="visual-card jacket"></div>
+          <div class="visual-card shoes"></div>
+        </div>
+      </div>
+
+      <button type="button" class="slider-arrow right" @click="nextSlide">›</button>
+
+      <div class="slider-indicator">{{ currentSlide + 1 }}/{{ slides.length }}</div>
+    </section>
+
+    <section class="spotlight-wrap">
+      <div class="container spotlight-section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Spotlight</p>
+            <h2>현재 주목받는 카드</h2>
+          </div>
+        </div>
+
+        <div class="spotlight-grid">
+          <article v-for="item in spotlightItems" :key="item.name" class="spotlight-card">
+            <div class="spotlight-art"></div>
+            <strong>{{ item.name }}</strong>
+            <span>{{ item.change }}</span>
+          </article>
+        </div>
       </div>
     </section>
 
-    <!-- Product Grid Example -->
-    <section class="container products-section">
-      <h2 class="title-section">New Arrivals</h2>
-      <div class="products-grid">
-        <!-- Sample Product 1 -->
-        <div class="product-card">
-          <div class="product-image">
-            <!-- Placeholder for card image -->
-            <div class="placeholder">Card Image</div>
-          </div>
-          <div class="product-info">
-            <span class="brand">POKEMON</span>
-            <h3 class="name">Pikachu Illustrator</h3>
-            <p class="price">₩ 500,000</p>
+    <section class="collection-section container">
+      <article v-for="section in collections" :key="section.title" class="collection-card">
+        <div class="section-head compact">
+          <div>
+            <p class="eyebrow">Collection</p>
+            <h2>{{ section.title }}</h2>
           </div>
         </div>
-        
-        <!-- Sample Product 2 -->
-        <div class="product-card">
-          <div class="product-image">
-            <div class="placeholder">Card Image</div>
-          </div>
-          <div class="product-info">
-            <span class="brand">YUGIOH</span>
-            <h3 class="name">Blue-Eyes White Dragon</h3>
-            <p class="price">₩ 120,000</p>
-          </div>
+
+        <div class="product-row">
+          <button
+            v-for="item in section.items"
+            :key="`${section.title}-${item.name}`"
+            type="button"
+            class="product-card"
+            @click="goCards"
+          >
+            <div class="product-art"></div>
+            <strong>{{ item.name }}</strong>
+            <span>{{ item.price }}</span>
+          </button>
         </div>
-      </div>
+      </article>
     </section>
   </div>
 </template>
 
 <style scoped>
-.hero {
-  background-color: #111;
-  color: #fff;
-  height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  margin-bottom: 60px;
+.home-page {
+  padding: 36px 0 84px;
 }
 
-.hero-content h1 {
-  font-size: 40px;
+.hero-slider,
+.spotlight-card,
+.collection-card,
+.product-card {
+  border: 1px solid var(--color-border);
+  border-radius: 28px;
+  background: var(--color-panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.hero-slider {
+  position: relative;
+  overflow: hidden;
+  padding: 32px 86px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+}
+
+.slider-stage {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
+  gap: 26px;
+  align-items: center;
+  min-height: 460px;
+}
+
+.slider-copy h1,
+.section-head h2 {
+  margin: 0;
+  color: var(--color-text-strong);
+}
+
+.slider-copy h1 {
+  font-size: clamp(2.8rem, 5vw, 4.6rem);
+  line-height: 1.08;
+  margin-bottom: 10px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--color-primary);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.slider-copy strong {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--color-text-strong);
+  font-size: 1.2rem;
+}
+
+.slider-copy p,
+.product-card span {
+  color: var(--color-text-muted);
+}
+
+.hero-button {
+  margin-top: 22px;
+  padding: 13px 20px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #2c2407;
   font-weight: 800;
-  letter-spacing: 2px;
-  line-height: 1.2;
+}
+
+.slider-visual {
+  position: relative;
+  min-height: 390px;
+}
+
+.visual-card {
+  position: absolute;
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.08)),
+    #d9d9d3;
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.12);
+}
+
+.visual-card.tall {
+  top: 22px;
+  left: 6%;
+  width: 24%;
+  height: 72%;
+}
+
+.visual-card.shirt {
+  top: 0;
+  left: 34%;
+  width: 26%;
+  height: 82%;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.08)),
+    #c6c8d8;
+}
+
+.visual-card.jacket {
+  top: 18px;
+  right: 2%;
+  width: 28%;
+  height: 68%;
+}
+
+.visual-card.shoes {
+  bottom: 18px;
+  left: 37%;
+  width: 22%;
+  height: 26%;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.02)),
+    #2c2b29;
+}
+
+.slider-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.56);
+  color: #77725f;
+  font-size: 2.1rem;
+  line-height: 1;
+}
+
+.slider-arrow.left {
+  left: 22px;
+}
+
+.slider-arrow.right {
+  right: 22px;
+}
+
+.slider-indicator {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(120, 120, 120, 0.46);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.spotlight-wrap,
+.collection-section {
+  margin-top: 28px;
+}
+
+.spotlight-section {
+  padding: 22px;
+  border: 1px solid var(--color-border);
+  border-radius: 28px;
+  background: var(--color-panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.section-head {
   margin-bottom: 16px;
 }
 
-.hero-content p {
-  font-size: 16px;
-  color: #ccc;
-  margin-bottom: 30px;
+.section-head.compact {
+  margin-bottom: 12px;
 }
 
-.shop-now-btn {
-  background-color: #fff;
-  color: #000;
-}
-
-.shop-now-btn:hover {
-  background-color: #f0f0f0;
-  opacity: 1;
-}
-
-.products-section {
-  margin-bottom: 80px;
-}
-
-.products-grid {
+.spotlight-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.spotlight-card {
+  padding: 18px;
+}
+
+.spotlight-card strong,
+.product-card strong {
+  color: var(--color-text-strong);
+}
+
+.spotlight-card span {
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.spotlight-art,
+.product-art {
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255,255,255,0.52), transparent 18%),
+    linear-gradient(135deg, rgba(122,104,30,0.65), rgba(240,217,117,0.18)),
+    linear-gradient(180deg, #80712f, #e7d04c);
+}
+
+.spotlight-art {
+  min-height: 260px;
+  margin-bottom: 14px;
+}
+
+.collection-section {
+  display: grid;
+  gap: 20px;
+}
+
+.collection-card {
+  padding: 22px;
+}
+
+.product-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .product-card {
-  cursor: pointer;
+  padding: 16px;
+  text-align: left;
 }
 
-.product-image {
-  background-color: var(--color-secondary);
-  aspect-ratio: 1 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-  border-radius: 4px;
-  transition: transform 0.2s ease;
+.product-art {
+  min-height: 220px;
+  margin-bottom: 12px;
 }
 
-.product-card:hover .product-image {
-  transform: translateY(-4px);
-}
+@media (max-width: 1100px) {
+  .slider-stage,
+  .spotlight-grid,
+  .product-row {
+    grid-template-columns: 1fr;
+  }
 
-.placeholder {
-  color: var(--color-text-light);
-  font-size: 14px;
-}
+  .hero-slider {
+    padding-inline: 28px;
+  }
 
-.product-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.brand {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-light);
-}
-
-.name {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--color-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.price {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--color-primary);
-  margin-top: 4px;
+  .slider-arrow {
+    display: none;
+  }
 }
 </style>
