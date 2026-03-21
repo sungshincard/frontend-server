@@ -50,6 +50,19 @@ const removeImage = () => {
   if (profileImageInput.value) profileImageInput.value.value = '';
 };
 
+const mockLoginOptions = [
+  {
+    profileKey: 'USER',
+    title: '일반 유저',
+    description: '내 상점과 판매 상품 관리 화면을 바로 확인합니다.'
+  },
+  {
+    profileKey: 'ADMIN',
+    title: '관리자',
+    description: '운영자 시점의 보호 화면 접근을 빠르게 확인합니다.'
+  }
+];
+
 const toggleMode = () => {
   isLogin.value = !isLogin.value;
   errorMessage.value = '';
@@ -66,6 +79,13 @@ const toggleMode = () => {
   agreePrivacy.value = false;
   agreeAge.value = false;
   profileImagePreview.value = null;
+};
+
+const handleMockLogin = (profileKey) => {
+  errorMessage.value = '';
+  successMessage.value = '';
+  authStore.loginWithMock(profileKey);
+  router.push('/');
 };
 
 const handleSubmit = async () => {
@@ -136,6 +156,25 @@ const handleSubmit = async () => {
       <p class="auth-subtitle">
         {{ isLogin ? 'Card Mall에 오신 것을 환영합니다.' : '계정을 만들어 카드 거래를 시작하세요.' }}
       </p>
+
+      <section class="mock-login-panel">
+        <div class="mock-login-copy">
+          <strong>빠른 목 로그인</strong>
+          <span>백엔드 연동 전 일반 유저의 내 상점 화면과 관리자 화면을 바로 확인할 수 있습니다.</span>
+        </div>
+        <div class="mock-login-grid">
+          <button
+            v-for="option in mockLoginOptions"
+            :key="option.profileKey"
+            type="button"
+            class="mock-login-button"
+            @click="handleMockLogin(option.profileKey)"
+          >
+            <strong>{{ option.title }}</strong>
+            <span>{{ option.description }}</span>
+          </button>
+        </div>
+      </section>
 
       <form @submit.prevent="handleSubmit" class="auth-form">
 
@@ -314,6 +353,72 @@ const handleSubmit = async () => {
   color: var(--color-text-light);
   font-size: 14px;
   margin-bottom: 32px;
+}
+
+.mock-login-panel {
+  margin-bottom: 26px;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 90%),
+    var(--color-panel-soft, #f8fafc);
+}
+
+.mock-login-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.mock-login-copy strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.mock-login-copy span {
+  font-size: 12px;
+  color: var(--color-text-light);
+}
+
+.mock-login-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.mock-login-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mock-login-button:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.mock-login-button strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mock-login-button span {
+  font-size: 12px;
+  color: var(--color-text-light);
+  line-height: 1.45;
 }
 
 .form-group {

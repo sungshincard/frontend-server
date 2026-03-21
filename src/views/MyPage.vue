@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, computed } from 'vue';
 import apiClient from '../services/api';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
@@ -12,6 +12,8 @@ const errorMessage = ref('');
 const saveMessage = ref('');
 const authStore = useAuthStore();
 const router = useRouter();
+
+const mockListings = computed(() => profile.value?.listings || []);
 
 // 편집 중인 폼 데이터 (닉네임만 수정 가능)
 const editForm = reactive({
@@ -35,7 +37,28 @@ const statusLabel = (s) => {
   return s;
 };
 
+const listingStatusLabel = (status) => {
+  if (status === 'ACTIVE') return '판매중';
+  if (status === 'SOLD') return '판매완료';
+  if (status === 'HIDDEN') return '숨김';
+  return status;
+};
+
+const formatPrice = (price) => `${price.toLocaleString('ko-KR')}원`;
+const goListingEdit = (listingId) => {
+  router.push(`/listings/${listingId}/edit`);
+};
+const goAddressBook = () => {
+  router.push('/addresses');
+};
+
 const fetchProfile = async () => {
+  if (authStore.isMockSession && authStore.user) {
+    profile.value = authStore.user;
+    isLoading.value = false;
+    return;
+  }
+
   try {
     const response = await apiClient.get('/member/me');
     profile.value = response.data;
@@ -130,17 +153,13 @@ onMounted(() => {
 
 <template>
   <div class="mypage-container container">
-    <h1 class="page-title">MY PAGE</h1>
+    <h1 class="page-title">내 상점 관리</h1>
 
     <div v-if="isLoading" class="loading">프로필 불러오는 중...</div>
     <div v-else-if="errorMessage && !profile" class="error">{{ errorMessage }}</div>
 
-    <div v-else-if="profile" class="profile-card">
-
-      <!-- 상단 헤더: 아바타 + 닉네임 -->
-      <div class="profile-header">
-
-        <!-- 아바타 -->
+    <div v-else-if="profile" class="profile-layout">
+      <section class="store-hero">
         <div class="avatar-wrapper">
           <div class="avatar" :class="{ editable: isEditing }" @click="isEditing && imageInput.click()">
             <img
@@ -162,25 +181,96 @@ onMounted(() => {
           <input ref="imageInput" type="file" accept="image/*" style="display:none" @change="handleImageChange" />
           <span v-if="isEditing" class="avatar-hint">클릭하여 변경</span>
         </div>
-
-        <!-- 닉네임 / 배지 -->
-        <div class="header-info">
-          <h2>{{ isEditing ? editForm.nickname || profile.nickname : profile.nickname }}</h2>
-          <div class="badges">
-            <span class="role-badge">{{ profile.role }}</span>
-            <span class="status-badge" :class="profile.status?.toLowerCase()">
-              {{ statusLabel(profile.status) }}
-            </span>
+        <div class="store-hero-body">
+          <div class="store-hero-head">
+            <div>
+              <p class="store-label">MY STORE</p>
+              <h2>{{ profile.store.storeName }}</h2>
+              <p class="store-owner">{{ isEditing ? editForm.nickname || profile.nickname : profile.nickname }}</p>
+            </div>
+            <div class="badges">
+              <span class="role-badge">{{ profile.role }}</span>
+              <span class="status-badge" :class="profile.status?.toLowerCase()">
+                {{ statusLabel(profile.status) }}
+              </span>
+            </div>
+          </div>
+          <p class="store-intro">{{ profile.store.intro }}</p>
+          <div class="store-summary">
+            <article>
+              <span>평균 평점</span>
+              <strong>{{ profile.store.ratingAvg }}</strong>
+            </article>
+            <article>
+              <span>후기 수</span>
+              <strong>{{ profile.store.reviewCount }}</strong>
+            </article>
+            <article>
+              <span>판매 완료</span>
+              <strong>{{ profile.store.completedSaleCount }}</strong>
+            </article>
+            <article>
+              <span>등록 상품</span>
+              <strong>{{ mockListings.length }}</strong>
+            </article>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- 성공/에러 메시지 -->
       <div v-if="saveMessage" class="save-message">✓ {{ saveMessage }}</div>
       <div v-if="errorMessage && profile" class="inline-error">{{ errorMessage }}</div>
 
-      <!-- ── 조회 모드 ── -->
-      <div v-if="!isEditing" class="profile-details">
+      <section class="management-section">
+        <div class="section-header">
+          <div>
+            <strong>내 상점 관리</strong>
+            <p>불필요한 지표 없이 현재 출품 상품과 상태만 빠르게 관리합니다.</p>
+          </div>
+          <button v-if="!isEditing" class="btn-edit" @click="startEdit">상점 정보 수정</button>
+        </div>
+
+        <div class="listing-table">
+          <div class="listing-table-head">
+            <span>사진</span>
+            <span>판매상태</span>
+            <span>상품명</span>
+            <span>가격</span>
+            <span>최근수정일</span>
+            <span>기능</span>
+          </div>
+          <div
+            v-for="listing in mockListings"
+            :key="listing.id"
+            class="listing-row"
+          >
+            <div class="listing-thumb">
+              <img :src="listing.imageUrl" :alt="listing.title" />
+            </div>
+            <div>
+              <span class="listing-state" :class="listing.status.toLowerCase()">
+                {{ listingStatusLabel(listing.status) }}
+              </span>
+            </div>
+            <div class="listing-name">{{ listing.title }}</div>
+            <div class="listing-price">{{ formatPrice(listing.price) }}</div>
+            <div class="listing-date">{{ listing.updatedAt }}</div>
+            <div class="listing-actions">
+              <button type="button" @click="goListingEdit(listing.id)">수정</button>
+              <button type="button">{{ listing.status === 'ACTIVE' ? '숨김' : '재등록' }}</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="!isEditing" class="profile-card">
+        <div class="section-header compact">
+          <div>
+            <strong>계정 정보</strong>
+            <p>내 상점 운영에 필요한 기본 계정 정보입니다.</p>
+          </div>
+          <button type="button" class="btn-edit" @click="goAddressBook">배송지 관리</button>
+        </div>
+        <div class="profile-details">
         <div class="detail-group">
           <span class="label">이메일</span>
           <span class="value">{{ profile.email }}</span>
@@ -201,12 +291,18 @@ onMounted(() => {
           <span class="label">성별</span>
           <span class="value">{{ genderLabel(profile.gender) }}</span>
         </div>
-      </div>
+        </div>
+      </section>
 
-      <!-- ── 편집 모드 ── -->
-      <div v-else class="edit-form">
+      <section v-else class="profile-card">
+        <div class="section-header compact">
+          <div>
+            <strong>상점 정보 수정</strong>
+            <p>닉네임과 프로필 이미지를 수정하면 내 상점 화면에 즉시 반영됩니다.</p>
+          </div>
+        </div>
+        <div class="edit-form">
 
-        <!-- 수정 가능: 닉네임 -->
         <div class="edit-section-title">변경 가능 항목</div>
         <div class="form-group">
           <label>닉네임 <span class="required">*</span></label>
@@ -238,21 +334,15 @@ onMounted(() => {
             <span class="locked-value">{{ genderLabel(profile.gender) }}</span>
           </div>
         </div>
-      </div>
+        </div>
 
-      <!-- ── 하단 버튼 ── -->
-      <div class="card-actions">
-        <template v-if="!isEditing">
-          <button class="btn-edit" @click="startEdit">✏️ 내 정보 수정</button>
-        </template>
-        <template v-else>
+        <div class="card-actions">
           <button class="btn-save" :disabled="isSaving" @click="saveEdit">
             {{ isSaving ? '저장 중...' : '✓ 저장' }}
           </button>
           <button class="btn-cancel" :disabled="isSaving" @click="cancelEdit">× 취소</button>
-        </template>
-      </div>
-
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -260,33 +350,36 @@ onMounted(() => {
 <style scoped>
 .mypage-container {
   padding: 40px 20px 80px;
-  max-width: 720px;
+  max-width: 1160px;
   margin: 0 auto;
 }
 
 .page-title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
   margin-bottom: 28px;
-  letter-spacing: 1px;
-  border-bottom: 2px solid var(--color-border);
-  padding-bottom: 10px;
+  letter-spacing: -0.04em;
 }
 
-.profile-card {
+.profile-layout {
+  display: grid;
+  gap: 24px;
+}
+
+.store-hero,
+.profile-card,
+.management-section {
   background: white;
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 36px;
+  padding: 28px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.04);
 }
 
-/* ── 헤더 ── */
-.profile-header {
+.store-hero {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 24px;
-  margin-bottom: 32px;
 }
 
 .avatar-wrapper {
@@ -339,6 +432,63 @@ onMounted(() => {
 
 .header-info h2 { font-size: 22px; margin-bottom: 8px; }
 
+.store-hero-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.store-hero-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.store-label {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-text-light);
+}
+
+.store-hero-head h2 {
+  margin-bottom: 6px;
+  font-size: 26px;
+}
+
+.store-owner,
+.store-intro {
+  color: var(--color-text-light);
+}
+
+.store-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.store-summary article {
+  padding: 16px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.store-summary span {
+  font-size: 12px;
+  color: var(--color-text-light);
+}
+
+.store-summary strong {
+  font-size: 18px;
+}
+
 .badges { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .role-badge {
@@ -366,6 +516,118 @@ onMounted(() => {
   background: #fff5f5; border: 1px solid #fed7d7;
   color: #e53e3e; font-size: 13px;
   padding: 8px 14px; border-radius: 6px; margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.section-header.compact {
+  margin-bottom: 20px;
+}
+
+.section-header strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+  color: var(--color-text);
+}
+
+.section-header p {
+  font-size: 13px;
+  color: var(--color-text-light);
+}
+
+.listing-table {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.listing-table-head,
+.listing-row {
+  display: grid;
+  grid-template-columns: 108px 120px 1.8fr 120px 150px 160px;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 18px;
+}
+
+.listing-table-head {
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.listing-row {
+  border-top: 1px solid #e2e8f0;
+}
+
+.listing-thumb img {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.listing-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e0f2fe;
+  color: #0c4a6e;
+}
+
+.listing-state.sold {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.listing-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.listing-price {
+  font-weight: 700;
+}
+
+.listing-date {
+  font-size: 13px;
+  color: var(--color-text-light);
+}
+
+.listing-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.listing-actions button {
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  background: white;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.listing-actions button:hover {
+  background: #f8fafc;
 }
 
 /* ── 조회 모드 ── */
@@ -505,10 +767,10 @@ onMounted(() => {
 }
 
 .btn-edit {
-  padding: 10px 24px;
+  padding: 10px 18px;
   background: var(--color-primary);
   color: white; border: none;
-  border-radius: 7px; font-size: 14px;
+  border-radius: 8px; font-size: 14px;
   font-weight: 600; cursor: pointer;
   transition: opacity 0.15s;
   font-family: inherit;
@@ -543,8 +805,32 @@ onMounted(() => {
 }
 .error { color: #ef4444; }
 
+@media (max-width: 960px) {
+  .store-hero,
+  .store-hero-head {
+    flex-direction: column;
+  }
+
+  .store-summary,
+  .listing-table-head,
+  .listing-row {
+    grid-template-columns: 1fr;
+  }
+
+  .listing-table-head {
+    display: none;
+  }
+
+  .listing-row {
+    gap: 10px;
+  }
+
+  .listing-actions {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 600px) {
-  .profile-header { flex-direction: column; text-align: center; }
   .profile-details { grid-template-columns: 1fr; }
   .badges { justify-content: center; }
   .card-actions { justify-content: stretch; }

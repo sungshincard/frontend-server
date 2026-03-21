@@ -1,10 +1,15 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cardGroups, getCardById, getCardsByGroupId } from '../data/catalog'
+import { cardGroups, getCardById, getCardsByGroupId, getStoreByName } from '../data/catalog'
+import { useWatchlistStore } from '../stores/watchlist'
 
 const route = useRoute()
 const router = useRouter()
+const watchlistStore = useWatchlistStore()
+const marketFilters = ['모든 상태', 'A', 'B', 'C', 'D', 'PSA10', 'PSA9', 'PSA8 이하', 'BGS10 BL', 'BGS10 G']
+const activeMarketFilter = ref('모든 상태')
+const showPurchaseOverlay = ref(false)
 
 const card = computed(() => getCardById(route.params.cardId))
 
@@ -18,8 +23,31 @@ const relatedGroups = computed(() => {
   return cardGroups.filter((group) => card.value.relatedGroups.includes(group.id))
 })
 
+const listingGallery = computed(() => {
+  if (!card.value) return []
+
+  return card.value.listings
+})
+
 const goCard = (cardId) => router.push(`/cards/${cardId}`)
 const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
+const goListingNew = () => router.push({ path: '/listings/new', query: { cardId: card.value?.id } })
+const openPurchaseOverlay = () => { showPurchaseOverlay.value = true }
+const closePurchaseOverlay = () => { showPurchaseOverlay.value = false }
+const goListingDetail = (listingId) => router.push(`/listings/${listingId}`)
+const goStore = (seller) => {
+  const store = getStoreByName(seller)
+  if (store) router.push(`/stores/${store.id}`)
+}
+const toggleWatchlist = () => {
+  if (!card.value) return
+  watchlistStore.toggle(card.value.id)
+}
+const isWatched = computed(() => (card.value ? watchlistStore.hasCard(card.value.id) : false))
+const gradingLabel = (listing) => {
+  if (listing.gradingCompany === 'NONE') return '미감정'
+  return listing.gradingScore ? `${listing.gradingCompany} ${listing.gradingScore}` : listing.gradingCompany
+}
 </script>
 
 <template>
@@ -38,11 +66,6 @@ const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
               <span>{{ card.cardNumber }}</span>
             </div>
           </div>
-        </div>
-        <div class="thumb-row">
-          <div class="thumb-box">앞면</div>
-          <div class="thumb-box">뒷면</div>
-          <div class="thumb-box">하자부위</div>
         </div>
       </div>
 
@@ -80,95 +103,104 @@ const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
         </div>
 
         <div class="action-row">
-          <button type="button" class="primary">구매하기</button>
-          <button type="button" class="secondary">출품하기</button>
-          <button type="button" class="tertiary">관심 등록</button>
+          <button type="button" class="primary" @click="openPurchaseOverlay">구매하기</button>
+          <button type="button" class="secondary" @click="goListingNew">출품하기</button>
+          <button type="button" class="tertiary" @click="toggleWatchlist">
+            {{ isWatched ? '관심 해제' : '관심 등록' }}
+          </button>
         </div>
       </div>
     </section>
 
-    <section class="detail-grid">
+    <section class="detail-grid top-split">
       <article class="detail-card">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Listings</p>
             <h2>출품 목록</h2>
           </div>
         </div>
-        <div class="table-list">
-          <div v-for="item in card.listings" :key="`${item.seller}-${item.price}`" class="table-row">
-            <div>
-              <strong>{{ item.seller }}</strong>
-              <span>{{ item.condition }} · {{ item.grading }}</span>
+        <div class="listing-gallery">
+          <article
+            v-for="item in listingGallery"
+            :key="`${item.seller}-${item.price}`"
+            class="listing-card"
+            role="button"
+            tabindex="0"
+            @click="goListingDetail(item.id)"
+          >
+            <div class="listing-image">
+              <img :src="item.imageUrl" :alt="item.seller" />
+              <strong class="listing-price-overlay">{{ item.price }}</strong>
+              <span class="listing-grade-overlay">{{ gradingLabel(item) }}</span>
             </div>
-            <div>
-              <strong>{{ item.price }}</strong>
+            <div class="listing-copy">
+              <strong>{{ item.seller }}</strong>
+              <p>
+                <button type="button" class="seller-link" @click.stop="goStore(item.seller)">
+                  {{ item.seller }}
+                </button>
+                · {{ item.conditionGrade }} 등급
+              </p>
               <span>{{ item.date }}</span>
             </div>
-          </div>
-        </div>
-      </article>
-
-      <article class="detail-card">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Trades</p>
-            <h2>최근 거래 이력</h2>
-          </div>
-        </div>
-        <div class="table-list">
-          <div v-for="item in card.trades" :key="`${item.date}-${item.price}`" class="table-row">
-            <div>
-              <strong>{{ item.date }}</strong>
-              <span>{{ item.spec }}</span>
-            </div>
-            <div>
-              <strong>{{ item.price }}</strong>
-            </div>
-          </div>
+          </article>
         </div>
       </article>
     </section>
 
-    <section class="detail-grid lower">
-      <article class="detail-card">
+    <section class="detail-grid lower single-column">
+      <article class="detail-card chart-card">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Price Chart</p>
-            <h2>상태별 시세 그래프</h2>
+            <h2>매매 시세</h2>
           </div>
         </div>
-        <div class="chart-box">
-          <div class="chart-line"></div>
-          <div class="chart-line secondary"></div>
+        <div class="market-filter-row">
+          <button
+            v-for="filter in marketFilters"
+            :key="filter"
+            type="button"
+            class="market-filter-chip"
+            :class="{ active: activeMarketFilter === filter }"
+            @click="activeMarketFilter = filter"
+          >
+            {{ filter }}
+          </button>
         </div>
-      </article>
-
-      <article class="detail-card">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Trust</p>
-            <h2>판매자 / 상점 신뢰 정보</h2>
+        <div class="chart-trade-layout">
+          <div class="chart-box">
+            <div class="chart-line"></div>
+            <div class="chart-line secondary"></div>
           </div>
-        </div>
-        <div class="trust-box">
-          <div><span>추천 상점</span><strong>도감카드샵</strong></div>
-          <div><span>평점</span><strong>4.9 / 5.0</strong></div>
-          <div><span>후기 수</span><strong>182개</strong></div>
-          <div><span>판매 완료 수</span><strong>421건</strong></div>
+          <aside class="trade-side-panel">
+            <div class="section-head compact">
+              <div>
+                <p class="eyebrow">Trades</p>
+                <h2>최근 거래 이력</h2>
+              </div>
+            </div>
+            <div class="trade-list">
+              <div v-for="item in card.trades" :key="`${item.date}-${item.price}`" class="trade-row">
+                <div>
+                  <strong>{{ item.date }}</strong>
+                  <span>{{ item.spec }}</span>
+                </div>
+                <strong>{{ item.price }}</strong>
+              </div>
+            </div>
+          </aside>
         </div>
       </article>
     </section>
 
-    <section class="detail-grid lower">
+    <section class="detail-grid lower single-column">
       <article class="detail-card">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Related Cards</p>
             <h2>같은 카드군의 다른 버전</h2>
           </div>
         </div>
-        <div class="related-grid">
+        <div class="related-grid related-grid-cards">
           <button v-for="item in relatedCards" :key="item.id" type="button" class="related-card" @click="goCard(item.id)">
             <strong>{{ item.name }}</strong>
             <span>{{ item.setName }}</span>
@@ -180,7 +212,6 @@ const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
       <article class="detail-card">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Related Groups</p>
             <h2>관련 카드군</h2>
           </div>
         </div>
@@ -193,6 +224,44 @@ const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
         </div>
       </article>
     </section>
+
+    <div v-if="showPurchaseOverlay" class="purchase-overlay" @click.self="closePurchaseOverlay">
+      <div class="purchase-sheet">
+        <div class="overlay-head">
+          <div>
+            <p class="eyebrow">Listings</p>
+            <h2>구매할 출품을 선택하세요</h2>
+            <span>{{ card.name }}에 등록된 판매 상품 중 하나를 먼저 선택합니다.</span>
+          </div>
+          <button type="button" class="overlay-close" @click="closePurchaseOverlay">닫기</button>
+        </div>
+
+        <div class="overlay-list-grid">
+          <article
+            v-for="item in listingGallery"
+            :key="item.id"
+            class="overlay-listing-card"
+          >
+            <div class="overlay-image">
+              <img :src="item.imageUrl" :alt="item.title">
+            </div>
+            <div class="overlay-copy">
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.seller }} · {{ item.conditionGrade }} · {{ gradingLabel(item) }}</p>
+              <small>{{ item.description }}</small>
+              <div class="overlay-meta">
+                <span>상태 {{ item.status }}</span>
+                <span>관심 {{ item.favoriteCount }}</span>
+              </div>
+            </div>
+            <div class="overlay-action">
+              <strong>{{ item.price }}</strong>
+              <button type="button" class="overlay-select" @click="goListingDetail(item.id)">이 출품 보기</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -397,6 +466,14 @@ const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
   margin-top: 60px;
 }
 
+.detail-grid.top-split {
+  grid-template-columns: 1fr;
+}
+
+.detail-grid.single-column {
+  grid-template-columns: 1fr;
+}
+
 .section-head h2 {
   font-size: 18px;
   font-weight: 700;
@@ -406,75 +483,179 @@ const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
   display: inline-block;
 }
 
-.table-list {
+.section-head.compact h2 {
+  margin-bottom: 8px;
+}
+
+.listing-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.listing-card {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
 }
 
-.table-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
+.listing-image {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel-soft);
+  aspect-ratio: 1;
 }
 
-.table-row div {
+.listing-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.listing-price-overlay,
+.listing-grade-overlay {
+  position: absolute;
+  bottom: 12px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(24, 24, 27, 0.82);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.listing-price-overlay {
+  left: 12px;
+}
+
+.listing-grade-overlay {
+  right: 12px;
+}
+
+.listing-copy {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.table-row div:last-child {
-  text-align: right;
+.listing-copy strong {
+  font-size: 14px;
+  color: var(--color-text-strong);
 }
 
-.table-row strong {
+.listing-copy p,
+.listing-copy span {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-subtle);
+}
+
+.seller-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--color-text-strong);
   font-weight: 700;
 }
 
-.table-row span {
-  color: var(--color-text-subtle);
+.market-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.market-filter-chip {
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-elevated);
+  color: var(--color-text-strong);
   font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.market-filter-chip.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-background-elevated);
+}
+
+.chart-trade-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.35fr) minmax(300px, 0.85fr);
+  gap: 20px;
 }
 
 .chart-box {
   width: 100%;
-  height: 240px;
+  min-height: 340px;
   background: var(--color-panel-soft);
   border: 1px solid var(--color-border);
   position: relative;
 }
 
-.trust-box {
+.trade-side-panel {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 18px 18px 6px;
+  background: var(--color-background-elevated);
+}
+
+.trade-list {
   display: flex;
   flex-direction: column;
 }
 
-.trust-box div {
+.trade-row {
   display: flex;
   justify-content: space-between;
-  padding: 16px 0;
+  gap: 12px;
+  padding: 14px 0;
   border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
+}
+
+.trade-row div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trade-row strong {
+  color: var(--color-text-strong);
+  font-weight: 700;
+}
+
+.trade-row span {
+  color: var(--color-text-subtle);
+  font-size: 12px;
 }
 
 .related-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  align-items: stretch;
+}
+
+.related-grid-cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .related-card {
+  min-height: 148px;
   padding: 16px;
   border: 1px solid var(--color-border);
   background: var(--color-background-elevated);
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  justify-content: flex-end;
+  gap: 8px;
   transition: border-color var(--transition-fast);
 }
 
@@ -493,11 +674,146 @@ const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
   color: var(--color-text-subtle);
 }
 
+.purchase-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(10, 10, 10, 0.66);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.purchase-sheet {
+  width: min(1120px, 100%);
+  max-height: 86vh;
+  overflow: auto;
+  border-radius: 28px;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-soft);
+  padding: 26px;
+}
+
+.overlay-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 22px;
+}
+
+.overlay-head h2 {
+  margin: 0 0 8px;
+  color: var(--color-text-strong);
+}
+
+.overlay-head span,
+.overlay-copy p,
+.overlay-copy small,
+.overlay-meta span {
+  color: var(--color-text-muted);
+}
+
+.overlay-close {
+  border: 1px solid var(--color-border);
+  background: var(--color-background-elevated);
+  color: var(--color-text-strong);
+  border-radius: 999px;
+  padding: 10px 16px;
+}
+
+.overlay-list-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.overlay-listing-card {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) 180px;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  background: var(--color-background-elevated);
+}
+
+.overlay-image {
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--color-panel-soft);
+}
+
+.overlay-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.overlay-copy {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.overlay-copy strong,
+.overlay-action strong {
+  color: var(--color-text-strong);
+}
+
+.overlay-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.overlay-action {
+  display: grid;
+  align-content: space-between;
+  justify-items: end;
+  gap: 12px;
+}
+
+.overlay-action strong {
+  font-size: 1.3rem;
+}
+
+.overlay-select {
+  width: 100%;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--color-primary);
+  color: #2c2407;
+  font-weight: 800;
+}
+
 @media (max-width: 900px) {
   .detail-hero,
   .detail-grid {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  .listing-gallery,
+  .chart-trade-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .related-grid-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .overlay-listing-card {
+    grid-template-columns: 1fr;
+  }
+
+  .overlay-action {
+    justify-items: stretch;
   }
 }
 </style>

@@ -6,6 +6,17 @@ import MyPage from '../views/MyPage.vue';
 import Cards from '../views/Cards.vue';
 import CardGroup from '../views/CardGroup.vue';
 import CardDetail from '../views/CardDetail.vue';
+import ListingNew from '../views/ListingNew.vue';
+import ListingDetail from '../views/ListingDetail.vue';
+import Checkout from '../views/Checkout.vue';
+import Watchlist from '../views/Watchlist.vue';
+import StoreView from '../views/StoreView.vue';
+import Orders from '../views/Orders.vue';
+import OrderDetail from '../views/OrderDetail.vue';
+import AddressBook from '../views/AddressBook.vue';
+import CardRequest from '../views/CardRequest.vue';
+import ReviewForm from '../views/ReviewForm.vue';
+import DisputeForm from '../views/DisputeForm.vue';
 import { useAuthStore } from '../stores/auth';
 
 const routes = [
@@ -30,6 +41,46 @@ const routes = [
     component: MyPage
   },
   {
+    path: '/watchlist',
+    name: 'Watchlist',
+    component: Watchlist
+  },
+  {
+    path: '/orders',
+    name: 'Orders',
+    component: Orders
+  },
+  {
+    path: '/orders/:orderId',
+    name: 'OrderDetail',
+    component: OrderDetail
+  },
+  {
+    path: '/orders/:orderId/review',
+    name: 'ReviewForm',
+    component: ReviewForm
+  },
+  {
+    path: '/orders/:orderId/dispute',
+    name: 'DisputeForm',
+    component: DisputeForm
+  },
+  {
+    path: '/addresses',
+    name: 'AddressBook',
+    component: AddressBook
+  },
+  {
+    path: '/card-requests/new',
+    name: 'CardRequest',
+    component: CardRequest
+  },
+  {
+    path: '/stores/:storeId',
+    name: 'StoreView',
+    component: StoreView
+  },
+  {
     path: '/cards',
     name: 'Cards',
     component: Cards
@@ -43,6 +94,26 @@ const routes = [
     path: '/cards/:cardId',
     name: 'CardDetail',
     component: CardDetail
+  },
+  {
+    path: '/listings/new',
+    name: 'ListingNew',
+    component: ListingNew
+  },
+  {
+    path: '/listings/:listingId/edit',
+    name: 'ListingEdit',
+    component: ListingNew
+  },
+  {
+    path: '/listings/:listingId',
+    name: 'ListingDetail',
+    component: ListingDetail
+  },
+  {
+    path: '/orders/checkout',
+    name: 'Checkout',
+    component: Checkout
   }
 ];
 
@@ -57,6 +128,7 @@ router.beforeEach((to, from, next) => {
   const isPublicPage =
     ['/login', '/', '/register', '/cards', '/dex'].includes(to.path) ||
     to.path.startsWith('/cards/group/') ||
+    to.path.startsWith('/listings/') ||
     (/^\/cards\/[^/]+$/.test(to.path) && !to.path.startsWith('/cards/group/'));
   const authRequired = !isPublicPage;
 

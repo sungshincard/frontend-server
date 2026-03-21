@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cardGroups, cards } from '../data/catalog'
+import { cards } from '../data/catalog'
 
 const router = useRouter()
 const route = useRoute()
@@ -13,36 +13,25 @@ const stageFilters = ['기본', '1진화', '2진화', '포켓몬 ex', '아이템
 
 const activeCategory = ref('포켓몬')
 const activeSort = ref('최신순')
-const selectedGroup = ref('')
 const selectedPokemon = ref('')
+const isFilterOpen = ref(false)
 
 watch(
   () => route.query,
   (query) => {
     activeCategory.value = query.category || '포켓몬'
-    selectedGroup.value = query.group || ''
     selectedPokemon.value = query.pokemon || ''
   },
   { immediate: true }
 )
 
-const visibleGroups = computed(() =>
-  cardGroups.filter((group) => {
-    const categoryMatch = activeCategory.value === '포켓몬' ? group.category === '포켓몬' : group.category === activeCategory.value
-    const groupMatch = !selectedGroup.value || group.id === selectedGroup.value
-    return categoryMatch && groupMatch
-  })
-)
-
 const visibleCards = computed(() =>
   cards.filter((card) => {
     const categoryMatch = activeCategory.value === '포켓몬' ? card.category === '포켓몬' : card.category === activeCategory.value
-    const groupMatch = !selectedGroup.value || card.groupId === selectedGroup.value
-    return categoryMatch && groupMatch
+    return categoryMatch
   })
 )
 
-const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
 const goCard = (cardId) => router.push(`/cards/${cardId}`)
 </script>
 
@@ -50,64 +39,74 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   <div class="cards-page container">
     <section class="cards-hero">
       <div>
-        <p class="eyebrow">Card Search</p>
         <h1>카드 탐색</h1>
-        <p>위 탭으로 범주를 바꾸고, 아래 그리드에서 카드 이미지를 나열해 선택하는 구조입니다.</p>
         <p v-if="selectedPokemon" class="filtered-copy">{{ selectedPokemon }} 기준으로 자동 필터링되었습니다.</p>
       </div>
 
       <div class="search-shell">
-        <input type="text" placeholder="포켓몬 이름 또는 카드명을 검색하세요" aria-label="포켓몬 이름 또는 카드명 검색">
-        <button type="button">검색</button>
+        <input type="text" placeholder="포켓몬 이름, 카드명, 카드번호를 검색하세요" aria-label="포켓몬 이름 또는 카드명 검색">
+        <button type="button" class="search-button">검색</button>
       </div>
     </section>
 
     <section class="filter-panel">
-      <div class="tab-row">
+      <div class="filter-top-row">
+        <div class="tab-row">
+          <button
+            v-for="tab in categoryTabs"
+            :key="tab"
+            type="button"
+            class="tab-chip"
+            :class="{ active: activeCategory === tab }"
+            @click="activeCategory = tab"
+          >
+            {{ tab }}
+          </button>
+        </div>
         <button
-          v-for="tab in categoryTabs"
-          :key="tab"
           type="button"
-          class="tab-chip"
-          :class="{ active: activeCategory === tab }"
-          @click="activeCategory = tab"
+          class="filter-toggle-button"
+          :class="{ active: isFilterOpen }"
+          @click="isFilterOpen = !isFilterOpen"
         >
-          {{ tab }}
+          필터 적용
         </button>
       </div>
 
-      <div class="filter-grid">
-        <div class="field-block">
-          <label>제품명</label>
-          <input type="text" placeholder="피카츄, 리자몽, 뮤" aria-label="제품명">
+      <div v-if="isFilterOpen" class="filter-dropdown">
+        <div class="filter-grid">
+          <div class="field-block">
+            <label>카드명</label>
+            <input type="text" placeholder="피카츄, 리자몽, 뮤" aria-label="카드명">
+          </div>
+          <div class="field-block">
+            <label>세트명</label>
+            <input type="text" placeholder="151, 흑염의 지배자" aria-label="세트명">
+          </div>
+          <div class="field-block">
+            <label>카드번호</label>
+            <input type="text" placeholder="025/165" aria-label="카드번호">
+          </div>
+          <div class="field-block">
+            <label>정렬 옵션</label>
+            <select v-model="activeSort">
+              <option v-for="option in sortOptions" :key="option">{{ option }}</option>
+            </select>
+          </div>
         </div>
-        <div class="field-block">
-          <label>세트명</label>
-          <input type="text" placeholder="151, 흑염의 지배자" aria-label="세트명">
-        </div>
-        <div class="field-block">
-          <label>카드번호</label>
-          <input type="text" placeholder="025/165" aria-label="카드번호">
-        </div>
-        <div class="field-block">
-          <label>정렬 옵션</label>
-          <select v-model="activeSort">
-            <option v-for="option in sortOptions" :key="option">{{ option }}</option>
-          </select>
-        </div>
-      </div>
 
-      <div class="chip-section">
-        <h2>카드 타입</h2>
-        <div class="chip-grid">
-          <button v-for="item in typeFilters" :key="item" type="button" class="filter-chip">{{ item }}</button>
+        <div class="chip-section">
+          <h2>카드 타입</h2>
+          <div class="chip-grid">
+            <button v-for="item in typeFilters" :key="item" type="button" class="filter-chip">{{ item }}</button>
+          </div>
         </div>
-      </div>
 
-      <div class="chip-section">
-        <h2>카드 종류</h2>
-        <div class="chip-grid">
-          <button v-for="item in stageFilters" :key="item" type="button" class="filter-chip">{{ item }}</button>
+        <div class="chip-section">
+          <h2>카드 종류</h2>
+          <div class="chip-grid">
+            <button v-for="item in stageFilters" :key="item" type="button" class="filter-chip">{{ item }}</button>
+          </div>
         </div>
       </div>
     </section>
@@ -115,30 +114,8 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
     <section class="results-section">
       <div class="section-head">
         <div>
-          <p class="eyebrow">Group Results</p>
-          <h2>카드군 추천</h2>
-        </div>
-      </div>
-      <div class="group-grid">
-        <button
-          v-for="group in visibleGroups"
-          :key="group.id"
-          type="button"
-          class="group-card"
-          @click="goGroup(group.id)"
-        >
-          <strong>{{ group.name }}</strong>
-          <span>{{ group.subtitle }}</span>
-          <small>{{ group.cardCount }}개의 개별 카드</small>
-        </button>
-      </div>
-    </section>
-
-    <section class="results-section">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Card Results</p>
-          <h2>검색 결과 카드</h2>
+          <h2>카드 목록</h2>
+          <p>{{ visibleCards.length }}개의 카드를 확인할 수 있습니다.</p>
         </div>
       </div>
 
@@ -186,20 +163,10 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 }
 
 .cards-hero {
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 32px;
-  margin-bottom: 32px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  color: var(--color-accent);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
+  gap: 20px;
+  margin-bottom: 28px;
 }
 
 .cards-hero h1 {
@@ -213,10 +180,11 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 .cards-hero p {
   color: var(--color-text-muted);
   font-size: 14px;
+  margin: 0;
 }
 
 .filtered-copy {
-  margin-top: 10px;
+  margin-top: 10px !important;
   color: var(--color-primary) !important;
   font-weight: 700;
 }
@@ -225,7 +193,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   display: flex;
   gap: 10px;
   width: 100%;
-  max-width: 600px;
+  max-width: 860px;
 }
 
 .search-shell input,
@@ -246,25 +214,41 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   border-color: var(--color-primary);
 }
 
-.search-shell button {
+.search-shell input {
+  min-height: 56px;
+  font-size: 15px;
+}
+
+.search-button {
+  min-width: 112px;
   padding: 14px 24px;
   background: var(--color-primary);
   color: var(--color-background-elevated);
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 .filter-panel {
-  padding: 24px;
+  padding: 20px 24px;
   background: var(--color-panel-soft);
   border: 1px solid var(--color-border);
   margin-bottom: 40px;
+  border-radius: 14px;
+}
+
+.filter-top-row,
+.tab-row,
+.chip-grid,
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .tab-row,
 .chip-grid {
-  display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
@@ -291,11 +275,33 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   border-color: var(--color-primary);
 }
 
+.filter-toggle-button {
+  padding: 11px 18px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-elevated);
+  color: var(--color-text-strong);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.filter-toggle-button.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-background-elevated);
+}
+
+.filter-dropdown {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
 .filter-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  margin-top: 24px;
 }
 
 .field-block label {
@@ -319,53 +325,27 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 }
 
 .results-section {
-  margin-top: 48px;
+  margin-top: 36px;
+}
+
+.section-head {
+  margin-bottom: 20px;
 }
 
 .section-head h2 {
   font-size: 20px;
   font-weight: 700;
-  margin: 0 0 20px;
-  border-bottom: 2px solid var(--color-primary);
-  padding-bottom: 12px;
-  display: inline-block;
+  margin: 0 0 6px;
 }
 
-.group-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.group-card {
-  padding: 20px;
-  text-align: left;
-  border: 1px solid var(--color-border);
-  background: var(--color-background-elevated);
-  display: flex;
-  flex-direction: column;
-  transition: border-color var(--transition-fast);
-}
-
-.group-card:hover, .card-tile:hover {
-  border-color: var(--color-primary);
-}
-
-.group-card strong {
-  font-size: 15px;
-  color: var(--color-text-strong);
-  margin-bottom: 4px;
-}
-
-.group-card span {
+.section-head p {
+  margin: 0;
   font-size: 13px;
   color: var(--color-text-muted);
 }
 
-.group-card small {
-  margin-top: 12px;
-  font-size: 12px;
-  color: var(--color-link);
+.card-tile:hover {
+  border-color: var(--color-primary);
 }
 
 .cards-grid {
@@ -479,8 +459,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 }
 
 @media (max-width: 1100px) {
-  .filter-grid,
-  .group-grid {
+  .filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .cards-grid {
@@ -492,12 +471,20 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   .cards-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .filter-grid,
-  .group-grid {
+  .filter-grid {
     grid-template-columns: 1fr;
   }
   .search-shell {
     flex-direction: column;
+  }
+  .filter-top-row,
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .search-button {
+    width: 100%;
   }
 }
 </style>
