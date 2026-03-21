@@ -1,72 +1,118 @@
-:root {
-  --color-primary: #000000;
-  --color-secondary: #f5f5f5;
-  --color-text: #333333;
-  --color-text-light: #888888;
-  --color-background: #ffffff;
-  --color-border: #e0e0e0;
-  
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  --transition: all 0.2s ease-in-out;
+@import url('https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+:root,
+:root[data-theme='dark'] {
+  --color-primary: #e7d04c;
+  --color-primary-strong: #f2df72;
+  --color-accent: #f7efb1;
+  --color-background: #11140d;
+  --color-background-elevated: #181d12;
+  --color-panel: #1e2416;
+  --color-panel-soft: rgba(231, 208, 76, 0.12);
+  --color-border: rgba(238, 225, 132, 0.14);
+  --color-text-strong: #f4fae9;
+  --color-text-muted: #d0ddbf;
+  --color-text-subtle: #94a47b;
+  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.22);
+  --font-heading: 'SUIT', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Pretendard', 'SUIT', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --transition-fast: 0.2s ease;
+  --color-text: var(--color-text-muted);
+  --color-text-light: var(--color-text-subtle);
 }
 
-*, *::before, *::after {
+:root[data-theme='light'] {
+  --color-primary: #d9b92d;
+  --color-primary-strong: #ebd35d;
+  --color-accent: #f5ecb2;
+  --color-background: #f3f7ea;
+  --color-background-elevated: #ffffff;
+  --color-panel: #ffffff;
+  --color-panel-soft: rgba(217, 185, 45, 0.08);
+  --color-border: rgba(122, 101, 24, 0.14);
+  --color-text-strong: #233014;
+  --color-text-muted: #51633e;
+  --color-text-subtle: #7b8f63;
+  --shadow-soft: 0 18px 40px rgba(20, 32, 67, 0.08);
+  --color-text: var(--color-text-muted);
+  --color-text-light: var(--color-text-subtle);
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: var(--font-family);
-  background-color: var(--color-background);
-  color: var(--color-text);
+  margin: 0;
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 28%),
+    linear-gradient(180deg, var(--color-background-elevated) 0%, var(--color-background) 100%);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 a {
-  text-decoration: none;
   color: inherit;
-  transition: var(--transition);
+  text-decoration: none;
+  transition: color var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
 }
 
-ul {
-  list-style: none;
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
 button {
+  border: 0;
   cursor: pointer;
-  border: none;
-  background: none;
-  font-family: inherit;
 }
 
-/* Common Layout */
+input,
+textarea,
+select {
+  color: var(--color-text-strong);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+#app {
+  min-height: 100vh;
+}
+
 .container {
-  max-width: 1200px;
+  width: min(1200px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 0 20px;
 }
 
-/* UI Utilities */
-.btn-primary {
-  background-color: var(--color-primary);
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 4px;
-  font-weight: 600;
-  transition: var(--transition);
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
 }
 
-.btn-primary:hover {
-  opacity: 0.8;
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-subtle);
 }
 
-.title-section {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 40px 0 20px;
-  text-transform: uppercase;
-  color: var(--color-primary);
+@media (max-width: 720px) {
+  .container {
+    width: min(100%, calc(100% - 24px));
+  }
 }
