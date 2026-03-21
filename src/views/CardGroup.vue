@@ -73,53 +73,49 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 
 <style scoped>
 .group-page {
-  padding: 52px 0 88px;
-}
-
-.group-hero,
-.version-card {
-  border: 1px solid var(--color-border);
-  border-radius: 28px;
-  background: var(--color-panel);
-  box-shadow: var(--shadow-soft);
+  padding: 40px 0 80px;
 }
 
 .group-hero {
+  border: 1px solid var(--color-border);
+  background: var(--color-panel);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 24px;
-  padding: 30px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 32px;
+  padding: 40px;
+  margin-bottom: 32px;
 }
 
 .eyebrow {
-  margin: 0 0 8px;
-  color: var(--color-primary);
-  font-size: 0.84rem;
+  margin: 0 0 12px;
+  color: var(--color-accent);
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .group-hero h1 {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   color: var(--color-text-strong);
-  font-size: clamp(2.2rem, 4vw, 3.8rem);
-  line-height: 1.08;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .group-hero p,
 .hero-summary small,
 .version-copy p {
   color: var(--color-text-muted);
+  font-size: 14px;
 }
 
 .hero-summary {
-  display: grid;
-  gap: 10px;
-  align-content: start;
-  padding: 22px;
-  border-radius: 22px;
-  background: var(--color-background-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  background: var(--color-panel-soft);
+  border: 1px solid var(--color-border);
 }
 
 .hero-summary span,
@@ -127,108 +123,117 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 .version-head strong,
 .version-meta span:first-child {
   color: var(--color-text-strong);
+  font-weight: 700;
 }
 
 .filter-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 22px;
+  gap: 12px;
+  margin-bottom: 32px;
 }
 
 .strip-chip {
-  padding: 10px 16px;
-  border-radius: 999px;
+  padding: 12px 20px;
   border: 1px solid var(--color-border);
   background: var(--color-background-elevated);
-  color: var(--color-text-muted);
+  color: var(--color-text-strong);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.strip-chip:hover {
+  border-color: var(--color-primary);
 }
 
 .group-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  margin-top: 24px;
+  gap: 24px;
 }
 
 .version-card {
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  gap: 18px;
-  padding: 18px;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 24px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-elevated);
   cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.version-card:hover {
+  border-color: var(--color-primary);
 }
 
 .version-thumb {
-  min-height: 210px;
-  padding: 18px;
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent),
-    var(--color-background-elevated);
-  color: var(--color-text-subtle);
-  font-weight: 700;
-}
-
-.version-thumb.artwork {
+  background: var(--color-panel-soft);
+  border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 320px;
+  padding: 20px;
+  aspect-ratio: 0.8;
 }
 
 .focus-card {
-  width: min(100%, 250px);
+  width: 100%;
   aspect-ratio: 0.71;
-  padding: 16px;
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.54), rgba(255,255,255,0.12) 16%, transparent 16%),
-    linear-gradient(180deg, #d8f182 0%, #c7e56a 42%, #b5d857 100%);
-  box-shadow: inset 0 0 0 3px rgba(255,255,255,0.28);
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-soft);
 }
 
 .focus-head,
 .focus-foot {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  color: #243312;
+  font-size: 10px;
+  color: var(--color-text-muted);
   font-weight: 700;
 }
 
 .focus-art {
-  height: 54%;
-  margin: 12px 0;
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 38% 30%, rgba(255,255,255,0.6), transparent 20%),
-    linear-gradient(135deg, rgba(66,106,40,0.72), rgba(181,219,93,0.18)),
-    linear-gradient(180deg, #5d9233, #b1dc68);
+  flex: 1;
+  margin: 10px 0;
+  background: #f0f0f0;
+  border: 1px solid var(--color-border);
 }
 
 .version-copy {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-content: start;
 }
 
 .version-head {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  align-items: start;
+  align-items: flex-start;
+}
+
+.version-head strong {
+  font-size: 18px;
 }
 
 .version-head span,
 .version-meta span:last-child {
   color: var(--color-text-subtle);
+  font-size: 13px;
 }
 
 .version-meta {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
 }
 
 @media (max-width: 900px) {
@@ -236,7 +241,6 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   .version-card {
     grid-template-columns: 1fr;
   }
-
   .group-card-grid {
     grid-template-columns: 1fr;
   }

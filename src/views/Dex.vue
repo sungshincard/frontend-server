@@ -82,31 +82,26 @@ const goFilteredCards = (entry) => {
 
 <style scoped>
 .dex-page {
-  padding: 32px 0 72px;
+  padding: 40px 0 80px;
 }
 
 .dex-board {
   border: 1px solid var(--color-border);
-  border-radius: 30px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 6%, transparent), transparent 16%),
-    var(--color-panel);
-  box-shadow: var(--shadow-soft);
-  padding: 20px;
+  background: var(--color-panel);
+  padding: 32px;
 }
 
 .dex-search-row {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1.3fr) 160px 220px;
-  gap: 14px;
-  margin-bottom: 16px;
+  grid-template-columns: 80px minmax(0, 1fr) 200px 200px;
+  gap: 16px;
+  margin-bottom: 32px;
 }
 
 .dex-search-box {
-  min-height: 70px;
-  border-radius: 22px;
+  min-height: 60px;
   border: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-background-elevated) 84%, var(--color-primary) 16%);
+  background: var(--color-panel-soft);
   color: var(--color-text-strong);
 }
 
@@ -115,127 +110,130 @@ const goFilteredCards = (entry) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
+  font-weight: 700;
+  font-size: 14px;
 }
 
 .search-box {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
+  display: flex;
   align-items: center;
-  padding: 12px 16px;
+  gap: 16px;
+  padding: 0 16px;
 }
 
 .search-box span {
   font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .search-box input {
-  min-width: 0;
-  height: 42px;
-  border: 2px solid rgba(44, 61, 18, 0.45);
-  border-radius: 8px;
-  padding: 0 12px;
-  background: rgba(255,255,255,0.72);
+  flex: 1;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  padding: 0 16px;
+  background: var(--color-background-elevated);
+  font-size: 14px;
+  outline: none;
 }
 
 .search-box button {
-  padding: 10px 14px;
-  border-radius: 999px;
+  padding: 10px 20px;
   background: var(--color-primary);
-  color: #20300c;
-  font-weight: 800;
+  color: var(--color-background-elevated);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
 }
 
 .dex-panel {
-  border: 2px solid color-mix(in srgb, var(--color-primary) 42%, transparent);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--color-background-elevated) 90%, var(--color-primary) 10%);
+  border: 1px solid var(--color-border);
+  background: var(--color-background-elevated);
 }
 
 .dex-panel-head {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
   align-items: center;
-  padding: 16px 18px;
-  border-bottom: 2px dotted color-mix(in srgb, var(--color-primary) 55%, transparent);
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .dex-panel-head strong {
   color: var(--color-text-strong);
-  font-size: 1.2rem;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .lang-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .lang-tags span {
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
-  background: var(--color-background-elevated);
-  color: var(--color-primary);
-  font-size: 0.85rem;
-  font-weight: 700;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel-soft);
+  color: var(--color-text-strong);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .dex-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px 18px;
-  padding: 18px;
+  gap: 16px;
+  padding: 24px;
 }
 
 .dex-entry {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
+  display: flex;
   align-items: center;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: transparent;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-elevated);
   text-align: left;
+  transition: border-color var(--transition-fast);
+  cursor: pointer;
 }
 
 .dex-entry:hover {
-  background: var(--color-panel-soft);
+  border-color: var(--color-primary);
 }
 
 .entry-no {
-  color: var(--color-primary);
-  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  font-size: 13px;
   font-weight: 700;
 }
 
 .entry-name {
   color: var(--color-text-strong);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 @media (max-width: 1100px) {
-  .dex-search-row,
-  .dex-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .dex-search-row {
+    grid-template-columns: 1fr;
   }
-
   .logo-box {
     display: none;
   }
+  .dex-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
-
 @media (max-width: 720px) {
-  .dex-search-row,
-  .dex-grid,
-  .search-box {
+  .dex-grid {
     grid-template-columns: 1fr;
   }
-
   .dex-panel-head {
     flex-direction: column;
     align-items: start;
+    gap: 16px;
   }
 }
 </style>

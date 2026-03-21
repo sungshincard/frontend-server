@@ -2,39 +2,68 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 :root,
-:root[data-theme='dark'] {
-  --color-primary: #e7d04c;
-  --color-primary-strong: #f2df72;
-  --color-accent: #f7efb1;
-  --color-background: #11140d;
-  --color-background-elevated: #181d12;
-  --color-panel: #1e2416;
-  --color-panel-soft: rgba(231, 208, 76, 0.12);
-  --color-border: rgba(238, 225, 132, 0.14);
-  --color-text-strong: #f4fae9;
-  --color-text-muted: #d0ddbf;
-  --color-text-subtle: #94a47b;
-  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.22);
+:root[data-theme='light'] {
+  /* SNKRDUNK Exact CSS Variables */
+  --color-primary: #000000; /* Black buttons */
+  --color-primary-strong: #222222;
+  --color-accent: #ff4d00; /* Promo Orange */
+  --color-link: #1d3e91; /* Link Blue */
+  
+  --color-background: #ffffff; /* Pure white body */
+  --color-background-elevated: #ffffff;
+  
+  --color-panel: #ffffff;
+  --color-panel-soft: #f9f9f9;
+  --color-border: #eeeeee; /* Light gray dividers */
+  
+  --color-text-strong: #000000;
+  --color-text-muted: #222222;
+  --color-text-subtle: #757575; /* Secondary labels */
+  
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
+  
   --font-heading: 'SUIT', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-body: 'Pretendard', 'SUIT', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --transition-fast: 0.2s ease;
+  
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  
+  --transition-fast: 0.2s ease-out;
+  
   --color-text: var(--color-text-muted);
   --color-text-light: var(--color-text-subtle);
 }
 
-:root[data-theme='light'] {
-  --color-primary: #d9b92d;
-  --color-primary-strong: #ebd35d;
-  --color-accent: #f5ecb2;
-  --color-background: #f3f7ea;
-  --color-background-elevated: #ffffff;
-  --color-panel: #ffffff;
-  --color-panel-soft: rgba(217, 185, 45, 0.08);
-  --color-border: rgba(122, 101, 24, 0.14);
-  --color-text-strong: #233014;
-  --color-text-muted: #51633e;
-  --color-text-subtle: #7b8f63;
-  --shadow-soft: 0 18px 40px rgba(20, 32, 67, 0.08);
+:root[data-theme='dark'] {
+  /* SNKRDUNK Dark Mode Translation */
+  --color-primary: #ffffff;
+  --color-primary-strong: #f0f0f0;
+  --color-accent: #ff4d00;
+  --color-link: #4da3ff;
+  
+  --color-background: #111111;
+  --color-background-elevated: #1a1a1a;
+  
+  --color-panel: #1a1a1a;
+  --color-panel-soft: #222222;
+  --color-border: #333333;
+  
+  --color-text-strong: #ffffff;
+  --color-text-muted: #e0e0e0;
+  --color-text-subtle: #999999;
+  
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.4);
+  
+  --font-heading: 'SUIT', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Pretendard', 'SUIT', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  
+  --transition-fast: 0.2s ease-out;
+  
   --color-text: var(--color-text-muted);
   --color-text-light: var(--color-text-subtle);
 }
@@ -51,12 +80,10 @@ html {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 28%),
-    linear-gradient(180deg, var(--color-background-elevated) 0%, var(--color-background) 100%);
-  color: var(--color-text-muted);
+  background-color: var(--color-background);
+  color: var(--color-text-strong);
   font-family: var(--font-body);
-  line-height: 1.6;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
