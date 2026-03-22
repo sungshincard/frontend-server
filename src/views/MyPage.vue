@@ -15,9 +15,11 @@ const router = useRouter();
 
 const mockListings = computed(() => profile.value?.listings || []);
 
-// 편집 중인 폼 데이터 (닉네임만 수정 가능)
+// 편집 중인 폼 데이터
 const editForm = reactive({
   nickname: '',
+  storeName: '',
+  intro: ''
 });
 
 // 프로필 이미지
@@ -79,6 +81,8 @@ const fetchProfile = async () => {
 
 const startEdit = () => {
   editForm.nickname = profile.value.nickname || '';
+  editForm.storeName = profile.value.store?.storeName || '';
+  editForm.intro = profile.value.store?.intro || '';
   newImagePreview.value = null;
   errorMessage.value = '';
   isEditing.value = true;
@@ -108,6 +112,16 @@ const saveEdit = async () => {
       nickname: editForm.nickname,
     });
 
+    try {
+      // 상점 정보 저장
+      await apiClient.patch('/stores/me', {
+        storeName: editForm.storeName || profile.value.store?.storeName || editForm.nickname + '님의 상점',
+        intro: editForm.intro,
+      });
+    } catch(e) {
+      console.warn('상점 정보가 아직 백엔드에 초기화되지 않았거나 서버 통신에 실패했습니다.', e);
+    }
+
     // 이미지가 변경된 경우 별도 저장
     if (newImagePreview.value) {
       await apiClient.patch('/member/me/profile-image', {
@@ -116,8 +130,12 @@ const saveEdit = async () => {
       profile.value.profileImageUrl = newImagePreview.value;
     }
 
-    // 로컬 profile 객체 업데이트
+    // 로컬 profile 업데이트
     profile.value.nickname = editForm.nickname;
+    if (profile.value.store) {
+      profile.value.store.storeName = editForm.storeName || profile.value.store.storeName;
+      profile.value.store.intro = editForm.intro;
+    }
 
     saveMessage.value = '프로필이 성공적으로 수정되었습니다.';
     isEditing.value = false;
@@ -314,6 +332,15 @@ onMounted(() => {
           <label>닉네임 <span class="required">*</span></label>
           <input type="text" v-model="editForm.nickname" placeholder="닉네임" />
           <span class="form-hint">다른 사용자에게 공개되는 이름입니다.</span>
+        </div>
+        <div class="form-group">
+          <label>상점 이름</label>
+          <input type="text" v-model="editForm.storeName" placeholder="상점 이름" />
+          <span class="form-hint">비워두시면 기존 상점명이 유지됩니다.</span>
+        </div>
+        <div class="form-group">
+          <label>상점 소개글</label>
+          <textarea v-model="editForm.intro" placeholder="상점 소개를 짧게 입력해주세요." rows="3" class="form-textarea"></textarea>
         </div>
 
         <!-- 변경 불가 항목 -->
@@ -670,7 +697,8 @@ onMounted(() => {
 
 .form-group input[type="text"],
 .form-group input[type="tel"],
-.form-group input[type="date"] {
+.form-group input[type="date"],
+.form-textarea {
   width: 100%; padding: 11px 14px;
   font-family: inherit; font-size: 14px;
   border: 1px solid var(--color-border);
@@ -679,7 +707,8 @@ onMounted(() => {
   box-sizing: border-box;
   background: white; color: var(--color-text);
 }
-.form-group input:focus { border-color: var(--color-primary); }
+.form-textarea { resize: vertical; }
+.form-group input:focus, .form-textarea:focus { border-color: var(--color-primary); }
 
 .gender-group { display: flex; gap: 10px; }
 

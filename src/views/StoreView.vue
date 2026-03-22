@@ -1,12 +1,39 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cards, getStoreById, getStoreByName, storeReviews } from '../data/catalog'
+import { cards, storeReviews } from '../data/catalog'
+import apiClient from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
 
-const store = computed(() => getStoreById(route.params.storeId) || getStoreByName('리자몰'))
+const dbStore = ref(null)
+
+const fetchStore = async () => {
+  try {
+    const res = await apiClient.get(`/stores/${route.params.storeId}`)
+    dbStore.value = res.data
+  } catch (error) {
+    console.error('상점 정보를 불러오지 못했습니다.', error)
+  }
+}
+
+onMounted(() => {
+  fetchStore()
+})
+
+const store = computed(() => {
+  return dbStore.value ? {
+    id: dbStore.value.id,
+    name: dbStore.value.storeName,
+    intro: dbStore.value.intro || '등록된 상점 소개가 없습니다.',
+    rating: dbStore.value.ratingAvg?.toFixed(1) || '0.0',
+    reviews: dbStore.value.reviewCount || 0,
+    sales: dbStore.value.completedSaleCount || 0,
+    badges: ['인증회원']
+  } : null
+})
+
 const storeListings = computed(() => {
   if (!store.value) return []
   return cards.flatMap((card) =>
