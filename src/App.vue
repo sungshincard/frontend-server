@@ -52,10 +52,10 @@ onMounted(() => {
     <header class="site-header">
       <div class="container header-inner">
         <router-link to="/" class="brand-mark">
-          <span class="brand-badge">CD</span>
+          <img class="brand-logo-image" src="/logo.png" alt="카드거래소 로고">
           <span class="brand-copy">
-            <strong>CardDex</strong>
-            <small>Pokemon Card Market</small>
+            <strong>카드거래소</strong>
+            <small>Card-Exchange</small>
           </span>
         </router-link>
 
@@ -135,7 +135,7 @@ onMounted(() => {
     <footer class="site-footer">
       <div class="container footer-inner">
         <div>
-          <strong>CardDex</strong>
+          <strong>카드거래소</strong>
           <p>도감 기반 탐색과 출품 비교, 에스크로 정산을 결합한 포켓몬 카드 거래 서비스.</p>
         </div>
         <div class="footer-links">
@@ -179,17 +179,12 @@ onMounted(() => {
   gap: 14px;
 }
 
-.brand-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
-  color: #20300c;
-  font-weight: 900;
-  letter-spacing: -0.03em;
+.brand-logo-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  object-fit: cover;
+  flex: 0 0 48px;
 }
 
 .brand-copy {
