@@ -3,6 +3,8 @@ import Home from '../views/Home.vue';
 import Dex from '../views/Dex.vue';
 import Auth from '../views/Auth.vue';
 import MyPage from '../views/MyPage.vue';
+import AccountVerify from '../views/AccountVerify.vue';
+import AccountEdit from '../views/AccountEdit.vue';
 import Cards from '../views/Cards.vue';
 import CardGroup from '../views/CardGroup.vue';
 import CardDetail from '../views/CardDetail.vue';
@@ -40,6 +42,16 @@ const routes = [
     path: '/mypage',
     name: 'MyPage',
     component: MyPage
+  },
+  {
+    path: '/mypage/account/verify',
+    name: 'AccountVerify',
+    component: AccountVerify
+  },
+  {
+    path: '/mypage/account/edit',
+    name: 'AccountEdit',
+    component: AccountEdit
   },
   {
     path: '/watchlist',
