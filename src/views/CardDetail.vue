@@ -26,15 +26,15 @@ const relatedGroups = computed(() => {
 const listingGallery = computed(() => {
   if (!card.value) return []
 
-  return card.value.listings
+  return card.value.saleCards
 })
 
 const goCard = (cardId) => router.push(`/cards/${cardId}`)
 const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
-const goListingNew = () => router.push({ path: '/listings/new', query: { cardId: card.value?.id } })
+const goSaleCardNew = () => router.push({ path: '/saleCards/new', query: { cardId: card.value?.id } })
 const openPurchaseOverlay = () => { showPurchaseOverlay.value = true }
 const closePurchaseOverlay = () => { showPurchaseOverlay.value = false }
-const goListingDetail = (listingId) => router.push(`/listings/${listingId}`)
+const goSaleCardDetail = (saleCardId) => router.push(`/saleCards/${saleCardId}`)
 const goStore = (seller) => {
   const store = getStoreByName(seller)
   if (store) router.push(`/stores/${store.id}`)
@@ -98,13 +98,13 @@ const gradingLabel = (listing) => {
           </div>
           <div>
             <span>출품 수</span>
-            <strong>{{ card.listingCount }}개</strong>
+            <strong>{{ card.saleCardCount }}개</strong>
           </div>
         </div>
 
         <div class="action-row">
           <button type="button" class="primary" @click="openPurchaseOverlay">구매하기</button>
-          <button type="button" class="secondary" @click="goListingNew">출품하기</button>
+          <button type="button" class="secondary" @click="goSaleCardNew">출품하기</button>
           <button type="button" class="tertiary" @click="toggleWatchlist">
             {{ isWatched ? '관심 해제' : '관심 등록' }}
           </button>
@@ -126,7 +126,7 @@ const gradingLabel = (listing) => {
             class="listing-card"
             role="button"
             tabindex="0"
-            @click="goListingDetail(item.id)"
+            @click="goSaleCardDetail(item.id)"
           >
             <div class="listing-image">
               <img :src="item.imageUrl" :alt="item.seller" />
@@ -256,7 +256,7 @@ const gradingLabel = (listing) => {
             </div>
             <div class="overlay-action">
               <strong>{{ item.price }}</strong>
-              <button type="button" class="overlay-select" @click="goListingDetail(item.id)">이 출품 보기</button>
+              <button type="button" class="overlay-select" @click="goSaleCardDetail(item.id)">이 출품 보기</button>
             </div>
           </article>
         </div>

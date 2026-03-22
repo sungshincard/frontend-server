@@ -13,7 +13,7 @@ const saveMessage = ref('');
 const authStore = useAuthStore();
 const router = useRouter();
 
-const mockListings = computed(() => profile.value?.listings || []);
+const mockListings = computed(() => profile.value?.saleCards || []);
 
 // 편집 중인 폼 데이터
 const editForm = reactive({
@@ -47,8 +47,8 @@ const listingStatusLabel = (status) => {
 };
 
 const formatPrice = (price) => `${price.toLocaleString('ko-KR')}원`;
-const goListingEdit = (listingId) => {
-  router.push(`/listings/${listingId}/edit`);
+const goSaleCardEdit = (saleCardId) => {
+  router.push(`/saleCards/${saleCardId}/edit`);
 };
 const goAddressBook = () => {
   router.push('/addresses');
@@ -276,7 +276,7 @@ onMounted(() => {
             <div class="listing-price">{{ formatPrice(listing.price) }}</div>
             <div class="listing-date">{{ listing.updatedAt }}</div>
             <div class="listing-actions">
-              <button type="button" @click="goListingEdit(listing.id)">수정</button>
+              <button type="button" @click="goSaleCardEdit(listing.id)">수정</button>
               <button type="button">{{ listing.status === 'ACTIVE' ? '숨김' : '재등록' }}</button>
             </div>
           </div>

@@ -64,13 +64,13 @@ export const cards = [
     lowestPrice: '132,000원',
     recentPrice: '128,000원',
     averagePrice: '129,500원',
-    listingCount: 7,
+    saleCardCount: 7,
     trend: '+8%',
     summary: '수집 수요가 강하고 한글판 마스터볼 미러 중에서도 인기가 높은 카드입니다.',
     relatedGroups: ['pikachu', 'mew'],
-    listings: [
+    saleCards: [
       {
-        id: 'listing-pikachu-masterball-1',
+        id: 'sale-card-pikachu-masterball-1',
         seller: '썬더상점',
         conditionGrade: 'A',
         gradingCompany: 'PSA',
@@ -85,7 +85,7 @@ export const cards = [
         imageUrl: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?auto=format&fit=crop&w=900&q=80',
       },
       {
-        id: 'listing-pikachu-masterball-2',
+        id: 'sale-card-pikachu-masterball-2',
         seller: '전기마켓',
         conditionGrade: 'A',
         gradingCompany: 'NONE',
@@ -100,7 +100,7 @@ export const cards = [
         imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80',
       },
       {
-        id: 'listing-pikachu-masterball-3',
+        id: 'sale-card-pikachu-masterball-3',
         seller: '도감카드샵',
         conditionGrade: 'B',
         gradingCompany: 'NONE',
@@ -138,13 +138,13 @@ export const cards = [
     lowestPrice: '29,000원',
     recentPrice: '31,000원',
     averagePrice: '30,400원',
-    listingCount: 13,
+    saleCardCount: 13,
     trend: '+2%',
     summary: '입문 유저와 라이트 컬렉터 수요가 많은 대표 프로모 카드입니다.',
     relatedGroups: ['pikachu'],
-    listings: [
+    saleCards: [
       {
-        id: 'listing-pikachu-promo-1',
+        id: 'sale-card-pikachu-promo-1',
         seller: '프로모허브',
         conditionGrade: 'A',
         gradingCompany: 'NONE',
@@ -159,7 +159,7 @@ export const cards = [
         imageUrl: 'https://images.unsplash.com/photo-1603481546579-65d935ba9cdd?auto=format&fit=crop&w=900&q=80',
       },
       {
-        id: 'listing-pikachu-promo-2',
+        id: 'sale-card-pikachu-promo-2',
         seller: '피카샵',
         conditionGrade: 'S',
         gradingCompany: 'CGC',
@@ -196,13 +196,13 @@ export const cards = [
     lowestPrice: '189,000원',
     recentPrice: '176,000원',
     averagePrice: '182,000원',
-    listingCount: 18,
+    saleCardCount: 18,
     trend: '+12%',
     summary: '동일 카드군 내에서도 가장 거래가 활발한 핵심 카드로, 시세와 출품 비교가 중요합니다.',
     relatedGroups: ['charizard', 'pikachu'],
-    listings: [
+    saleCards: [
       {
-        id: 'listing-charizard-sar-1',
+        id: 'sale-card-charizard-sar-1',
         seller: '드래곤스토어',
         conditionGrade: 'S',
         gradingCompany: 'PSA',
@@ -217,7 +217,7 @@ export const cards = [
         imageUrl: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?auto=format&fit=crop&w=900&q=80',
       },
       {
-        id: 'listing-charizard-sar-2',
+        id: 'sale-card-charizard-sar-2',
         seller: '리자몰',
         conditionGrade: 'A',
         gradingCompany: 'NONE',
@@ -232,7 +232,7 @@ export const cards = [
         imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80',
       },
       {
-        id: 'listing-charizard-sar-3',
+        id: 'sale-card-charizard-sar-3',
         seller: '불꽃카드샵',
         conditionGrade: 'B',
         gradingCompany: 'NONE',
@@ -270,13 +270,13 @@ export const cards = [
     lowestPrice: '149,000원',
     recentPrice: '143,000원',
     averagePrice: '145,500원',
-    listingCount: 9,
+    saleCardCount: 9,
     trend: '+4%',
     summary: '일본판 리자몽 컬렉션 수요가 강한 카드로, 감정 카드 비중이 높습니다.',
     relatedGroups: ['charizard'],
-    listings: [
+    saleCards: [
       {
-        id: 'listing-charizard-vstar-1',
+        id: 'sale-card-charizard-vstar-1',
         seller: '재팬카드',
         conditionGrade: 'A',
         gradingCompany: 'PSA',
@@ -291,7 +291,7 @@ export const cards = [
         imageUrl: 'https://images.unsplash.com/photo-1603481546579-65d935ba9cdd?auto=format&fit=crop&w=900&q=80',
       },
       {
-        id: 'listing-charizard-vstar-2',
+        id: 'sale-card-charizard-vstar-2',
         seller: '리자몰',
         conditionGrade: 'A',
         gradingCompany: 'NONE',
@@ -328,13 +328,13 @@ export const cards = [
     lowestPrice: '78,000원',
     recentPrice: '74,000원',
     averagePrice: '76,200원',
-    listingCount: 11,
+    saleCardCount: 11,
     trend: '-3%',
     summary: '최근 출품은 늘었지만 거래가는 소폭 조정 중인 카드입니다.',
     relatedGroups: ['mew', 'pikachu'],
-    listings: [
+    saleCards: [
       {
-        id: 'listing-mew-1',
+        id: 'sale-card-mew-1',
         seller: '에스퍼룸',
         conditionGrade: 'A',
         gradingCompany: 'NONE',
@@ -349,7 +349,7 @@ export const cards = [
         imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80',
       },
       {
-        id: 'listing-mew-2',
+        id: 'sale-card-mew-2',
         seller: '뮤뮤샵',
         conditionGrade: 'S',
         gradingCompany: 'BGS',
@@ -386,13 +386,13 @@ export const cards = [
     lowestPrice: '4,500원',
     recentPrice: '4,300원',
     averagePrice: '4,400원',
-    listingCount: 23,
+    saleCardCount: 23,
     trend: '+1%',
     summary: '범용 트레이너스 카드라 거래량 대비 가격 변동은 낮지만 출품 수는 많습니다.',
     relatedGroups: ['trainers-item'],
-    listings: [
+    saleCards: [
       {
-        id: 'listing-ultraball-1',
+        id: 'sale-card-ultraball-1',
         seller: '트레이너팩토리',
         conditionGrade: 'S',
         gradingCompany: 'NONE',
@@ -407,7 +407,7 @@ export const cards = [
         imageUrl: 'https://images.unsplash.com/photo-1603481546579-65d935ba9cdd?auto=format&fit=crop&w=900&q=80',
       },
       {
-        id: 'listing-ultraball-2',
+        id: 'sale-card-ultraball-2',
         seller: '실전카드샵',
         conditionGrade: 'A',
         gradingCompany: 'NONE',
@@ -489,7 +489,7 @@ export const stores = [
 export const mockOrders = [
   {
     id: 'order-1001',
-    listingId: 'listing-charizard-sar-2',
+    saleCardId: 'sale-card-charizard-sar-2',
     cardId: 'charizard-ex-sar-151',
     title: '리자몽 ex SAR A급',
     seller: '리자몰',
@@ -504,7 +504,7 @@ export const mockOrders = [
   },
   {
     id: 'order-1002',
-    listingId: 'listing-pikachu-masterball-2',
+    saleCardId: 'sale-card-pikachu-masterball-2',
     cardId: 'pikachu-masterball-151',
     title: '피카츄 마스터볼 미러 미감정',
     seller: '전기마켓',
@@ -519,7 +519,7 @@ export const mockOrders = [
   },
   {
     id: 'order-1003',
-    listingId: 'listing-ultraball-1',
+    saleCardId: 'sale-card-ultraball-1',
     cardId: 'ultra-ball-trainers',
     title: '하이퍼볼 미개봉급',
     seller: '트레이너팩토리',
@@ -578,7 +578,7 @@ export const storeReviews = {
   ],
 }
 
-export const latestListings = [
+export const latestSaleCards = [
   { name: '리자몽 ex SAR', price: '189,000원', seller: '리자몰' },
   { name: '뮤 ex UR', price: '78,000원', seller: '뮤뮤샵' },
   { name: '피카츄 프로모', price: '29,000원', seller: '프로모허브' },
@@ -594,7 +594,7 @@ export const recentTrades = cards.slice(0, 4).map((card) => ({
   id: card.id,
   name: card.name,
   price: card.recentPrice,
-  count: `${card.listingCount}개 출품`,
+  count: `${card.saleCardCount}개 출품`,
 }))
 
 export const getGroupById = (groupId) => cardGroups.find((group) => group.id === groupId)
@@ -609,9 +609,9 @@ export const getStoreByName = (storeName) => stores.find((store) => store.name =
 
 export const getOrderById = (orderId) => mockOrders.find((order) => order.id === orderId)
 
-export const getListingById = (listingId) => {
+export const getSaleCardById = (saleCardId) => {
   for (const card of cards) {
-    const listing = card.listings.find((item) => item.id === listingId)
+    const listing = card.saleCards.find((item) => item.id === saleCardId)
     if (listing) {
       return { ...listing, cardId: card.id, card }
     }

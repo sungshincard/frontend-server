@@ -22,9 +22,9 @@ const mockProfiles = {
       reviewCount: 10,
       completedSaleCount: 14
     },
-    listings: [
+    saleCards: [
       {
-        id: 'listing-charizard-sar-2',
+        id: 'sale-card-charizard-sar-2',
         imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=320&q=80',
         title: '리자몽 ex SAR A급',
         price: 189000,
@@ -32,7 +32,7 @@ const mockProfiles = {
         updatedAt: '2026-03-21 19:18'
       },
       {
-        id: 'listing-mew-1',
+        id: 'sale-card-mew-1',
         imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=320&q=80',
         title: '뮤 ex UR',
         price: 78000,
@@ -40,7 +40,7 @@ const mockProfiles = {
         updatedAt: '2026-03-21 13:40'
       },
       {
-        id: 'listing-pikachu-promo-1',
+        id: 'sale-card-pikachu-promo-1',
         imageUrl: 'https://images.unsplash.com/photo-1603481546579-65d935ba9cdd?auto=format&fit=crop&w=320&q=80',
         title: '피카츄 프로모',
         price: 29000,
@@ -48,7 +48,7 @@ const mockProfiles = {
         updatedAt: '2026-03-21 13:10'
       },
       {
-        id: 'listing-charizard-vstar-2',
+        id: 'sale-card-charizard-vstar-2',
         imageUrl: 'https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?auto=format&fit=crop&w=320&q=80',
         title: '리자몽 VSTAR 미감정',
         price: 149000,
@@ -76,7 +76,7 @@ const mockProfiles = {
       reviewCount: 0,
       completedSaleCount: 0
     },
-    listings: []
+    saleCards: []
   }
 };
 

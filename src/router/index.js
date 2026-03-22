@@ -6,8 +6,8 @@ import MyPage from '../views/MyPage.vue';
 import Cards from '../views/Cards.vue';
 import CardGroup from '../views/CardGroup.vue';
 import CardDetail from '../views/CardDetail.vue';
-import ListingNew from '../views/ListingNew.vue';
-import ListingDetail from '../views/ListingDetail.vue';
+import SaleCardNew from '../views/SaleCardNew.vue';
+import SaleCardDetail from '../views/SaleCardDetail.vue';
 import Checkout from '../views/Checkout.vue';
 import Watchlist from '../views/Watchlist.vue';
 import StoreView from '../views/StoreView.vue';
@@ -102,19 +102,19 @@ const routes = [
     component: CardDetail
   },
   {
-    path: '/listings/new',
-    name: 'ListingNew',
-    component: ListingNew
+    path: '/sale-cards/new',
+    name: 'SaleCardNew',
+    component: SaleCardNew
   },
   {
-    path: '/listings/:listingId/edit',
-    name: 'ListingEdit',
-    component: ListingNew
+    path: '/sale-cards/:saleCardId/edit',
+    name: 'SaleCardEdit',
+    component: SaleCardNew
   },
   {
-    path: '/listings/:listingId',
-    name: 'ListingDetail',
-    component: ListingDetail
+    path: '/sale-cards/:saleCardId',
+    name: 'SaleCardDetail',
+    component: SaleCardDetail
   },
   {
     path: '/orders/checkout',
@@ -134,7 +134,7 @@ router.beforeEach((to, from, next) => {
   const isPublicPage =
     ['/login', '/', '/register', '/cards', '/dex'].includes(to.path) ||
     to.path.startsWith('/cards/group/') ||
-    to.path.startsWith('/listings/') ||
+    to.path.startsWith('/sale-cards/') ||
     (/^\/cards\/[^/]+$/.test(to.path) && !to.path.startsWith('/cards/group/'));
   const authRequired = !isPublicPage;
 

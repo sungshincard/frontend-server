@@ -148,7 +148,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
             <p class="set-name">{{ card.setName }} · {{ card.rarity }}</p>
             <div class="price-row">
               <strong>{{ card.lowestPrice }}</strong>
-              <span>출품 {{ card.listingCount }}개</span>
+              <span>출품 {{ card.saleCardCount }}개</span>
             </div>
           </div>
         </article>
