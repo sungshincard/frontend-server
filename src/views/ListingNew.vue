@@ -474,7 +474,7 @@ const goBack = () => {
 .submit-button {
   background: #d93a2f;
   border-color: transparent;
-  color: white;
+  color: var(--color-primary-text);
 }
 
 @media (max-width: 720px) {

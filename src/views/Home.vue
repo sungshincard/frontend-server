@@ -209,7 +209,7 @@ const activeSlide = computed(() => slides[currentSlide.value])
 
 .visual-card {
   position: absolute;
-  background: #f0f0f0;
+  background: var(--color-background-elevated);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-soft);
 }
@@ -224,7 +224,7 @@ const activeSlide = computed(() => slides[currentSlide.value])
   top: 40px; right: 0; width: 30%; height: 75%;
 }
 .visual-card.shoes {
-  bottom: 0; left: 30%; width: 40%; height: 30%; background: #ffffff;
+  bottom: 0; left: 30%; width: 40%; height: 30%; background: var(--color-panel);
 }
 
 .slider-arrow {
@@ -311,7 +311,7 @@ const activeSlide = computed(() => slides[currentSlide.value])
 
 .spotlight-art,
 .product-art {
-  background: #f5f5f5;
+  background: var(--color-background-elevated);
   border: 1px solid var(--color-border);
 }
 

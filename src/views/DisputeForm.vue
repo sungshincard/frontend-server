@@ -90,6 +90,6 @@ const disputeOptions = [
 .upload-box strong { color: var(--color-text-strong); }
 .submit-row { display: flex; justify-content: flex-end; margin-top: 6px; }
 .submit-button {
-  padding: 14px 20px; border: 0; border-radius: 16px; background: #d93a2f; color: white; font-weight: 800;
+  padding: 14px 20px; border: 0; border-radius: 16px; background: #d93a2f; color: var(--color-primary-text); font-weight: 800;
 }
 </style>

@@ -290,7 +290,7 @@ onMounted(() => {
   padding: 0 4px;
   border-radius: 999px;
   background: #d93a2f;
-  color: white;
+  color: var(--color-primary-text);
   font-size: 0.65rem;
   font-weight: 800;
   border: 2px solid var(--color-background);

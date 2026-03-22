@@ -363,7 +363,7 @@ onMounted(() => {
 .store-hero,
 .profile-card,
 .management-section {
-  background: white;
+  background: var(--color-panel);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 28px;
@@ -389,7 +389,7 @@ onMounted(() => {
   height: 88px;
   border-radius: 50%;
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-primary-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,7 +484,7 @@ onMounted(() => {
 .store-summary article {
   padding: 16px;
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--color-background-elevated);
   border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
@@ -499,7 +499,6 @@ onMounted(() => {
 .store-summary strong {
   font-size: 18px;
 }
-
 /* ── 메시지 ── */
 .save-message {
   background: #f0fff4; border: 1px solid #c6f6d5;
@@ -571,7 +570,7 @@ onMounted(() => {
 }
 
 .listing-table-head {
-  background: #f8fafc;
+  background: var(--color-background-elevated);
   font-size: 12px;
   font-weight: 700;
   color: var(--color-text-light);
@@ -631,7 +630,7 @@ onMounted(() => {
 .listing-actions button {
   padding: 9px 12px;
   border: 1px solid var(--color-border);
-  background: white;
+  background: var(--color-panel);
   border-radius: 8px;
   font-family: inherit;
   font-size: 13px;
@@ -640,7 +639,7 @@ onMounted(() => {
 }
 
 .listing-actions button:hover {
-  background: #f8fafc;
+  background: var(--color-background-elevated);
 }
 
 /* ── 조회 모드 ── */
@@ -677,7 +676,7 @@ onMounted(() => {
   border-radius: 6px; outline: none;
   transition: border-color 0.2s;
   box-sizing: border-box;
-  background: white; color: var(--color-text);
+  background: var(--color-panel); color: var(--color-text);
 }
 .form-textarea { resize: vertical; }
 .form-group input:focus, .form-textarea:focus { border-color: var(--color-primary); }
@@ -697,28 +696,27 @@ onMounted(() => {
 .gender-item.active {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: white; font-weight: 700;
+  color: var(--color-primary-text); font-weight: 700;
 }
 
 .readonly-group {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 14px;
-  background: #f8fafc; border-radius: 6px;
+  background: var(--color-background-elevated); border-radius: 6px;
   border: 1px solid #e2e8f0;
 }
 
 .readonly-group label { margin-bottom: 0; min-width: 60px; }
 
-.readonly-value { font-size: 14px; color: #475569; flex: 1; }
+.readonly-value { font-size: 14px; color: var(--color-text-strong); flex: 1; }
 
 .readonly-badge {
   font-size: 11px; background: #e2e8f0;
-  color: #64748b; padding: 2px 8px;
+  color: var(--color-text-subtle); padding: 2px 8px;
   border-radius: 10px; font-weight: 600;
 }
 
 .required { color: #e53e3e; }
-
 .form-hint {
   display: block; font-size: 12px;
   margin-top: 5px; color: var(--color-text-light);
@@ -727,7 +725,7 @@ onMounted(() => {
 .btn-edit {
   padding: 10px 18px;
   background: var(--color-primary);
-  color: white; border: none;
+  color: var(--color-primary-text); border: none;
   border-radius: 8px; font-size: 14px;
   font-weight: 600; cursor: pointer;
   transition: opacity 0.15s;
@@ -738,7 +736,7 @@ onMounted(() => {
 .btn-save {
   padding: 10px 24px;
   background: var(--color-primary);
-  color: white; border: none;
+  color: var(--color-primary-text); border: none;
   border-radius: 7px; font-size: 14px;
   font-weight: 600; cursor: pointer;
   transition: opacity 0.15s; font-family: inherit;
@@ -748,13 +746,13 @@ onMounted(() => {
 
 .btn-cancel {
   padding: 10px 20px;
-  background: white; color: #475569;
+  background: var(--color-panel); color: var(--color-text-strong);
   border: 1px solid var(--color-border);
   border-radius: 7px; font-size: 14px;
   font-weight: 600; cursor: pointer;
   transition: background 0.15s; font-family: inherit;
 }
-.btn-cancel:hover:not(:disabled) { background: #f1f5f9; }
+.btn-cancel:hover:not(:disabled) { background: var(--color-panel-soft); }
 .btn-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .loading, .error {
