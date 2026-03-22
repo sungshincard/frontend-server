@@ -1,13 +1,13 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getListingById, getOrderById } from '../data/catalog'
+import { getSaleCardById, getOrderById } from '../data/catalog'
 
 const route = useRoute()
 const router = useRouter()
 
 const order = computed(() => getOrderById(route.params.orderId))
-const listing = computed(() => (order.value ? getListingById(order.value.listingId) : null))
+const listing = computed(() => (order.value ? getSaleCardById(order.value.saleCardId) : null))
 
 const steps = ['PAID', 'WAITING_FOR_SELLER', 'SHIPPED', 'DELIVERED', 'PURCHASE_CONFIRMED']
 const statusLabelMap = {
@@ -39,7 +39,7 @@ const currentStepIndex = computed(() => {
 })
 
 const goListing = () => {
-  if (listing.value) router.push(`/listings/${listing.value.id}`)
+  if (listing.value) router.push(`/saleCards/${listing.value.id}`)
 }
 const goReview = () => router.push(`/orders/${route.params.orderId}/review`)
 const goDispute = () => router.push(`/orders/${route.params.orderId}/dispute`)

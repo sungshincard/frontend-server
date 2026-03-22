@@ -37,7 +37,7 @@ const store = computed(() => {
 const storeListings = computed(() => {
   if (!store.value) return []
   return cards.flatMap((card) =>
-    card.listings
+    card.saleCards
       .filter((listing) => listing.seller === store.value.name)
       .map((listing) => ({ ...listing, card })),
   )
@@ -53,7 +53,7 @@ const ratingSummary = computed(() => {
   }
 })
 
-const goListing = (listingId) => router.push(`/listings/${listingId}`)
+const goListing = (saleCardId) => router.push(`/saleCards/${saleCardId}`)
 </script>
 
 <template>

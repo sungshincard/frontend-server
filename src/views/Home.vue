@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { latestListings, recentTrades, risingCards } from '../data/catalog'
+import { latestSaleCards, recentTrades, risingCards } from '../data/catalog'
 
 const router = useRouter()
 
@@ -21,9 +21,9 @@ const slides = [
 const currentSlide = ref(0)
 
 const collections = [
-  { title: '새로 출품된 카드', items: latestListings },
+  { title: '새로 출품된 카드', items: latestSaleCards },
   { title: '새로 출시된 카드', items: recentTrades },
-  { title: '현재 시세보다 저렴한 카드', items: latestListings.slice().reverse() },
+  { title: '현재 시세보다 저렴한 카드', items: latestSaleCards.slice().reverse() },
 ]
 
 const spotlightItems = computed(() =>
