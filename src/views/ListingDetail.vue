@@ -217,7 +217,7 @@ const addComment = () => {
   padding: 6px 10px;
   border-radius: 12px;
   background: #222;
-  color: white;
+  color: var(--color-primary-text);
   font-weight: 800;
 }
 
@@ -387,7 +387,7 @@ const addComment = () => {
 .primary-button {
   border: 0;
   background: #19b6b8;
-  color: white;
+  color: var(--color-primary-text);
 }
 
 @media (max-width: 960px) {

@@ -323,7 +323,7 @@ const gradingLabel = (listing) => {
 .phone-card-art {
   flex: 1;
   margin: 12px 0;
-  background: #f0f0f0;
+  background: var(--color-background-elevated);
   border: 1px solid var(--color-border);
 }
 
@@ -522,7 +522,7 @@ const gradingLabel = (listing) => {
   padding: 6px 10px;
   border-radius: 10px;
   background: rgba(24, 24, 27, 0.82);
-  color: white;
+  color: var(--color-primary-text);
   font-size: 13px;
   font-weight: 700;
 }
