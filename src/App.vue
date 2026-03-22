@@ -65,14 +65,14 @@ onMounted(() => {
           <router-link v-if="authStore.isAuthenticated" to="/mypage">마이페이지</router-link>
           
           <router-link v-if="authStore.isAuthenticated" to="/watchlist" class="nav-icon-button" title="관심 카드">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"></path>
+            <svg class="nav-icon-svg heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12.001 20.727 10.55 19.41C5.4 14.74 2 11.658 2 7.875 2 4.792 4.42 2.5 7.5 2.5c1.74 0 3.41.81 4.5 2.09A6.026 6.026 0 0 1 16.5 2.5C19.58 2.5 22 4.792 22 7.875c0 3.783-3.4 6.865-8.55 11.547l-1.449 1.305Z"/>
             </svg>
           </router-link>
           
           <div v-if="authStore.isAuthenticated" class="notification-wrap">
             <button type="button" class="nav-icon-button notification-button" @click="toggleNotifications" title="알림">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
@@ -97,10 +97,10 @@ onMounted(() => {
             </div>
           </div>
           <button type="button" class="nav-icon-button theme-button" @click="toggleTheme" :title="themeLabel">
-            <svg v-if="theme === 'light'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg v-if="theme === 'light'" class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
-            <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg v-else class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="5"></circle>
               <line x1="12" y1="1" x2="12" y2="3"></line>
               <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -114,7 +114,7 @@ onMounted(() => {
           </button>
           <template v-if="authStore.isAuthenticated">
             <button type="button" class="nav-icon-button" @click="handleLogout" title="로그아웃">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                 <polyline points="16 17 21 12 16 7"></polyline>
                 <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -246,6 +246,18 @@ onMounted(() => {
   border: none;
   cursor: pointer;
   transition: color 0.2s ease, background 0.2s ease;
+}
+
+.nav-icon-svg {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+
+.heart-icon {
+  width: 26px;
+  height: 26px;
+  flex-basis: 26px;
 }
 
 .site-nav a:hover,
