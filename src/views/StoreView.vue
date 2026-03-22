@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cards, getStoreById, getStoreByName } from '../data/catalog'
+import { cards, getStoreById, getStoreByName, storeReviews } from '../data/catalog'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,6 +14,16 @@ const storeListings = computed(() => {
       .filter((listing) => listing.seller === store.value.name)
       .map((listing) => ({ ...listing, card })),
   )
+})
+
+const reviews = computed(() => storeReviews[store.value?.id] || [])
+const ratingSummary = computed(() => {
+  if (!reviews.value.length) return { average: '0.0', count: 0 }
+  const total = reviews.value.reduce((sum, item) => sum + item.rating, 0)
+  return {
+    average: (total / reviews.value.length).toFixed(1),
+    count: reviews.value.length,
+  }
 })
 
 const goListing = (listingId) => router.push(`/listings/${listingId}`)
@@ -61,6 +71,41 @@ const goListing = (listingId) => router.push(`/listings/${listingId}`)
             <span>{{ item.card.setName }} · {{ item.condition }} · {{ item.grading }}</span>
             <small>{{ item.price }}</small>
           </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="store-section">
+      <div class="section-head">
+        <h2>후기 / 리뷰</h2>
+        <span>{{ ratingSummary.count }}개 · 평균 {{ ratingSummary.average }}</span>
+      </div>
+
+      <div class="review-summary">
+        <article>
+          <span>평균 평점</span>
+          <strong>{{ ratingSummary.average }}</strong>
+        </article>
+        <article>
+          <span>후기 수</span>
+          <strong>{{ ratingSummary.count }}</strong>
+        </article>
+        <article>
+          <span>거래 완료</span>
+          <strong>{{ store.sales }}</strong>
+        </article>
+      </div>
+
+      <div class="review-list">
+        <article v-for="review in reviews" :key="review.id" class="review-card">
+          <div class="review-head">
+            <strong>{{ review.reviewer }}</strong>
+            <span>{{ review.createdAt }}</span>
+          </div>
+          <div class="review-stars">
+            <span v-for="star in 5" :key="star" :class="{ active: star <= review.rating }">★</span>
+          </div>
+          <p>{{ review.content }}</p>
         </article>
       </div>
     </section>
@@ -199,10 +244,60 @@ const goListing = (listingId) => router.push(`/listings/${listingId}`)
   gap: 6px;
 }
 
+.review-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.review-summary article,
+.review-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--color-background-elevated);
+  border: 1px solid var(--color-border);
+}
+
+.review-summary span,
+.review-head span,
+.review-card p {
+  color: var(--color-text-muted);
+}
+
+.review-summary strong,
+.review-head strong {
+  color: var(--color-text-strong);
+}
+
+.review-list {
+  display: grid;
+  gap: 12px;
+}
+
+.review-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.review-stars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  color: #d1d5db;
+}
+
+.review-stars .active {
+  color: var(--color-primary);
+}
+
 @media (max-width: 960px) {
   .store-hero,
   .store-stats,
-  .store-grid {
+  .store-grid,
+  .review-summary {
     grid-template-columns: 1fr;
     flex-direction: column;
   }

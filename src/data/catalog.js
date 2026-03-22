@@ -561,6 +561,23 @@ export const notifications = [
   },
 ]
 
+export const storeReviews = {
+  'dragon-store': [
+    { id: 'review-d1', reviewer: '리자몽수집가', rating: 5, content: '포장 꼼꼼하고 카드 상태 설명이 정확했습니다.', createdAt: '2026-03-20' },
+    { id: 'review-d2', reviewer: 'SAR헌터', rating: 5, content: 'PSA 카드 상태 좋고 응답이 빨랐습니다.', createdAt: '2026-03-18' },
+    { id: 'review-d3', reviewer: '한글판러', rating: 4, content: '가격은 높았지만 상품 품질은 만족합니다.', createdAt: '2026-03-15' },
+  ],
+  'lizamall': [
+    { id: 'review-l1', reviewer: '불꽃매니아', rating: 5, content: '실물 사진과 동일했고 발송도 빨랐습니다.', createdAt: '2026-03-21' },
+    { id: 'review-l2', reviewer: '카드탐험가', rating: 4, content: '문의 답변이 친절했고 상태 설명이 상세했습니다.', createdAt: '2026-03-19' },
+    { id: 'review-l3', reviewer: '151수집중', rating: 5, content: '대면 거래도 깔끔하게 진행됐습니다.', createdAt: '2026-03-17' },
+  ],
+  'electric-market': [
+    { id: 'review-e1', reviewer: '피카츄러버', rating: 5, content: '입문용으로 샀는데 상태가 기대 이상이었습니다.', createdAt: '2026-03-20' },
+    { id: 'review-e2', reviewer: '전기마니아', rating: 4, content: '사진이 많아서 구매 판단이 쉬웠습니다.', createdAt: '2026-03-18' },
+  ],
+}
+
 export const latestListings = [
   { name: '리자몽 ex SAR', price: '189,000원', seller: '리자몰' },
   { name: '뮤 ex UR', price: '78,000원', seller: '뮤뮤샵' },

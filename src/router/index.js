@@ -17,6 +17,7 @@ import AddressBook from '../views/AddressBook.vue';
 import CardRequest from '../views/CardRequest.vue';
 import ReviewForm from '../views/ReviewForm.vue';
 import DisputeForm from '../views/DisputeForm.vue';
+import Policy from '../views/Policy.vue';
 import { useAuthStore } from '../stores/auth';
 
 const routes = [
@@ -74,6 +75,11 @@ const routes = [
     path: '/card-requests/new',
     name: 'CardRequest',
     component: CardRequest
+  },
+  {
+    path: '/policy',
+    name: 'Policy',
+    component: Policy
   },
   {
     path: '/stores/:storeId',

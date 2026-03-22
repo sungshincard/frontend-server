@@ -142,7 +142,7 @@ onMounted(() => {
           <router-link to="/cards">카드 검색</router-link>
           <router-link to="/dex">도감 탐색</router-link>
           <router-link to="/card-requests/new">카드 추가 요청</router-link>
-          <span>운영 정책</span>
+          <router-link to="/policy">운영 정책</router-link>
         </div>
       </div>
     </footer>
