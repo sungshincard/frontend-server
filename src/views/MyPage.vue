@@ -51,6 +51,9 @@ const goListingEdit = (listingId) => {
 const goAddressBook = () => {
   router.push('/addresses');
 };
+const goOrders = () => {
+  router.push('/orders');
+};
 
 const fetchProfile = async () => {
   if (authStore.isMockSession && authStore.user) {
@@ -268,7 +271,10 @@ onMounted(() => {
             <strong>계정 정보</strong>
             <p>내 상점 운영에 필요한 기본 계정 정보입니다.</p>
           </div>
-          <button type="button" class="btn-edit" @click="goAddressBook">배송지 관리</button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-edit" @click="goOrders">내 거래 관리</button>
+            <button type="button" class="btn-edit" @click="goAddressBook">배송지 관리</button>
+          </div>
         </div>
         <div class="profile-details">
         <div class="detail-group">

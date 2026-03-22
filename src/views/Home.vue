@@ -48,7 +48,11 @@ const activeSlide = computed(() => slides[currentSlide.value])
 <template>
   <div class="home-page">
     <section class="hero-slider container">
-      <button type="button" class="slider-arrow left" @click="prevSlide">‹</button>
+      <button type="button" class="slider-arrow left" @click="prevSlide">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
 
       <div class="slider-stage">
         <div class="slider-copy">
@@ -67,7 +71,11 @@ const activeSlide = computed(() => slides[currentSlide.value])
         </div>
       </div>
 
-      <button type="button" class="slider-arrow right" @click="nextSlide">›</button>
+      <button type="button" class="slider-arrow right" @click="nextSlide">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
 
       <div class="slider-indicator">{{ currentSlide + 1 }}/{{ slides.length }}</div>
     </section>
@@ -134,7 +142,7 @@ const activeSlide = computed(() => slides[currentSlide.value])
 .hero-slider {
   position: relative;
   overflow: hidden;
-  padding: 40px 60px;
+  padding: 60px 80px;
   background: var(--color-background-elevated);
 }
 
@@ -225,16 +233,25 @@ const activeSlide = computed(() => slides[currentSlide.value])
   transform: translateY(-50%);
   width: 48px;
   height: 48px;
-  background: var(--color-background-elevated);
-  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-panel-soft);
+  border: none;
   color: var(--color-text-strong);
-  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   z-index: 10;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
-.slider-arrow.left { left: 20px; }
-.slider-arrow.right { right: 20px; }
+.slider-arrow:hover {
+  background: var(--color-border);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.slider-arrow.left { left: 24px; }
+.slider-arrow.right { right: 24px; }
 
 .slider-indicator {
   position: absolute;

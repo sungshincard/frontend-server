@@ -60,15 +60,22 @@ onMounted(() => {
         </router-link>
 
         <nav class="site-nav">
-          <router-link to="/">메인</router-link>
           <router-link to="/dex">도감 탐색</router-link>
           <router-link to="/cards">카드 탐색</router-link>
-          <router-link v-if="authStore.isAuthenticated" to="/watchlist">관심 카드</router-link>
-          <router-link v-if="authStore.isAuthenticated" to="/orders">내 거래</router-link>
           <router-link v-if="authStore.isAuthenticated" to="/mypage">마이페이지</router-link>
+          
+          <router-link v-if="authStore.isAuthenticated" to="/watchlist" class="nav-icon-button" title="관심 카드">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"></path>
+            </svg>
+          </router-link>
+          
           <div v-if="authStore.isAuthenticated" class="notification-wrap">
-            <button type="button" class="nav-button notification-button" @click="toggleNotifications">
-              알림
+            <button type="button" class="nav-icon-button notification-button" @click="toggleNotifications" title="알림">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
               <span v-if="unreadCount" class="notification-count">{{ unreadCount }}</span>
             </button>
             <div v-if="showNotifications" class="notification-popover">
@@ -89,15 +96,30 @@ onMounted(() => {
               </button>
             </div>
           </div>
-          <div v-if="authStore.isAuthenticated" class="user-chip">
-            <strong>{{ authStore.displayName }}</strong>
-            <span>{{ userMetaLabel }}</span>
-          </div>
-          <button type="button" class="nav-button theme-button" @click="toggleTheme">
-            {{ themeLabel }}
+          <button type="button" class="nav-icon-button theme-button" @click="toggleTheme" :title="themeLabel">
+            <svg v-if="theme === 'light'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
           </button>
           <template v-if="authStore.isAuthenticated">
-            <button type="button" class="nav-button" @click="handleLogout">로그아웃</button>
+            <button type="button" class="nav-icon-button" @click="handleLogout" title="로그아웃">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
           </template>
           <template v-else>
             <router-link to="/login" class="nav-cta">로그인</router-link>
@@ -211,9 +233,25 @@ onMounted(() => {
   transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
+.nav-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
 .site-nav a:hover,
 .nav-button:hover,
-.theme-button {
+.nav-icon-button:hover,
+.theme-button.active {
   color: var(--color-text-strong);
   background: var(--color-panel-soft);
 }
@@ -234,18 +272,21 @@ onMounted(() => {
 }
 
 .notification-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  margin-left: 8px;
-  padding: 0 5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
   border-radius: 999px;
   background: #d93a2f;
   color: white;
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 800;
+  border: 2px solid var(--color-background);
 }
 
 .notification-popover {

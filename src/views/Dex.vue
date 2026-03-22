@@ -45,14 +45,11 @@ const goFilteredCards = (entry) => {
   <div class="dex-page container">
     <section class="dex-board">
       <div class="dex-search-row">
-        <div class="dex-search-box logo-box">CD</div>
         <div class="dex-search-box search-box wide">
           <span>Name all Pokemon:</span>
           <input type="text" placeholder="포켓몬 이름 검색" aria-label="포켓몬 이름 검색">
           <button type="button">검색</button>
         </div>
-        <div class="dex-search-box stat-box">0 / 1025</div>
-        <div class="dex-search-box stat-box">Timer: 00:00:00</div>
       </div>
 
       <div class="dex-panel">
@@ -93,8 +90,7 @@ const goFilteredCards = (entry) => {
 
 .dex-search-row {
   display: grid;
-  grid-template-columns: 80px minmax(0, 1fr) 200px 200px;
-  gap: 16px;
+  grid-template-columns: 1fr;
   margin-bottom: 32px;
 }
 
@@ -103,15 +99,6 @@ const goFilteredCards = (entry) => {
   border: 1px solid var(--color-border);
   background: var(--color-panel-soft);
   color: var(--color-text-strong);
-}
-
-.logo-box,
-.stat-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
 }
 
 .search-box {
@@ -216,12 +203,6 @@ const goFilteredCards = (entry) => {
 }
 
 @media (max-width: 1100px) {
-  .dex-search-row {
-    grid-template-columns: 1fr;
-  }
-  .logo-box {
-    display: none;
-  }
   .dex-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
