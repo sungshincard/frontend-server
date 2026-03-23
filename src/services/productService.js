@@ -12,16 +12,16 @@ const productService = {
   
   // Pokemon APIs
   getPokemons() {
-    return apiClient.get('/pokemons');
+    return apiClient.get('/v1/pokemons');
   },
   
   getPokemonDetail(id) {
-    return apiClient.get(`/pokemons/${id}`);
+    return apiClient.get(`/v1/pokemons/${id}`);
   },
   
   // Metadata APIs
   getCardMetadata() {
-    return apiClient.get('/metadata/cards');
+    return apiClient.get('/v1/metadata/cards');
   }
 };
 

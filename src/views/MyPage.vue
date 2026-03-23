@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue';
-import apiClient from '../services/api';
+import authService from '../services/authService';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 
@@ -68,7 +68,7 @@ const fetchProfile = async () => {
   }
 
   try {
-    const response = await apiClient.get('/member/me');
+    const response = await authService.getMe();
     profile.value = response.data;
   } catch (error) {
     console.error('Failed to fetch profile', error);
@@ -83,9 +83,9 @@ const fetchProfile = async () => {
 };
 
 const startEdit = () => {
-  editForm.nickname = profile.value.nickname || '';
-  editForm.storeName = profile.value.store?.storeName || '';
-  editForm.intro = profile.value.store?.intro || '';
+  editForm.nickname = profile.value?.nickname || '';
+  editForm.storeName = profile.value?.store?.storeName || '';
+  editForm.intro = profile.value?.store?.intro || '';
   newImagePreview.value = null;
   errorMessage.value = '';
   isEditing.value = true;
@@ -99,8 +99,6 @@ const cancelEdit = () => {
 };
 
 const saveEdit = async () => {
-  // 닉네임은 필수 값이므로 비워두고 저장하는 것만 막습니다.
-  // (수정하지 않고 그대로 두어도 editForm.nickname에 기존 이름이 들어있어 통과됩니다)
   if (!editForm.nickname.trim()) {
     errorMessage.value = '닉네임을 입력해 주세요.';
     return;
@@ -111,33 +109,36 @@ const saveEdit = async () => {
 
   try {
     // 프로필 기본 정보 저장 (닉네임만)
-    await apiClient.patch('/member/me', {
+    await authService.updateProfile({
       nickname: editForm.nickname,
     });
 
     try {
       // 상점 정보 저장
-      await apiClient.patch('/stores/me', {
-        storeName: editForm.storeName || profile.value.store?.storeName || editForm.nickname + '님의 상점',
+      await authService.updateStore({
+        storeName: editForm.storeName || profile.value?.store?.storeName || editForm.nickname + '님의 상점',
         intro: editForm.intro,
       });
     } catch(e) {
-      console.warn('상점 정보가 아직 백엔드에 초기화되지 않았거나 서버 통신에 실패했습니다.', e);
+      console.warn('상점 정보 수정에 실패했습니다.', e);
     }
 
     // 이미지가 변경된 경우 별도 저장
     if (newImagePreview.value) {
-      await apiClient.patch('/member/me/profile-image', {
-        profileImageUrl: newImagePreview.value,
-      });
-      profile.value.profileImageUrl = newImagePreview.value;
+      // authService에 updateProfileImage 추가하지 않았으므로 직접 apiClient 쓰거나 나중에 추가
+      // 일단 여기서는 authService.updateProfileImage가 없으므로 authService API를 더 확장하는 게 좋음
+      // 이미 authService에 넣어뒀어야 하는데 깜빡 함. 
+      await authService.updateProfileImage(newImagePreview.value);
+      if (profile.value) profile.value.profileImageUrl = newImagePreview.value;
     }
 
     // 로컬 profile 업데이트
-    profile.value.nickname = editForm.nickname;
-    if (profile.value.store) {
-      profile.value.store.storeName = editForm.storeName || profile.value.store.storeName;
-      profile.value.store.intro = editForm.intro;
+    if (profile.value) {
+      profile.value.nickname = editForm.nickname;
+      if (profile.value.store) {
+        profile.value.store.storeName = editForm.storeName || profile.value.store.storeName;
+        profile.value.store.intro = editForm.intro;
+      }
     }
 
     saveMessage.value = '프로필이 성공적으로 수정되었습니다.';
@@ -260,8 +261,8 @@ onMounted(() => {
                   </div>
                 </template>
                 <template v-else>
-                  <h2>{{ profile.store.storeName }}</h2>
-                  <p class="store-owner">{{ profile.nickname }}</p>
+                  <h2>{{ profile?.store?.storeName || profile?.nickname + '님의 상점' }}</h2>
+                  <p class="store-owner">{{ profile?.nickname }}</p>
                 </template>
               </div>
               <div class="hero-actions">
@@ -278,19 +279,19 @@ onMounted(() => {
               <label>상점 소개글</label>
               <textarea v-model="editForm.intro" placeholder="상점 소개를 짧게 입력해주세요." rows="3" class="form-textarea"></textarea>
             </div>
-            <p v-else class="store-intro">{{ profile.store.intro }}</p>
+            <p v-else class="store-intro">{{ profile?.store?.intro || '환영합니다!' }}</p>
             <div class="store-summary">
               <article>
                 <span>평균 평점</span>
-              <strong>{{ profile.store.ratingAvg }}</strong>
+              <strong>{{ profile?.store?.ratingAvg || 0.0 }}</strong>
             </article>
             <article>
               <span>후기 수</span>
-              <strong>{{ profile.store.reviewCount }}</strong>
+              <strong>{{ profile?.store?.reviewCount || 0 }}</strong>
             </article>
             <article>
               <span>판매 완료</span>
-              <strong>{{ profile.store.completedSaleCount }}</strong>
+              <strong>{{ profile?.store?.completedSaleCount || 0 }}</strong>
             </article>
             <article>
               <span>등록 상품</span>

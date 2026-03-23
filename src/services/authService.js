@@ -35,6 +35,14 @@ const authService = {
 
   setDefaultAddress(id) {
     return apiClient.patch(`/v1/members/addresses/${id}/default`);
+  },
+
+  updateStore(data) {
+    return apiClient.patch('/v1/stores/me', data);
+  },
+
+  updateProfileImage(profileImageUrl) {
+    return apiClient.patch('/v1/members/me/profile-image', { profileImageUrl });
   }
 };
 
