@@ -6,28 +6,50 @@ import productService from '../services/productService'
 const router = useRouter()
 const route = useRoute()
 
-const categoryTabs = ref(['포켓몬', '트레이너스', '에너지'])
+const categoryTabs = ref(['전체', '포켓몬', '에너지', '트레이너스'])
 const sortOptions = ref(['최신순', '인기순', '최저가순', '최근 거래순'])
-const typeFilters = ref(['불꽃', '물', '풀', '전기', '에스퍼', '악', '드래곤'])
-const stageFilters = ref(['기본', '1진화', '2진화', '포켓몬 ex', '아이템', '서포트'])
+
+const filterGroups = computed(() => {
+  if (activeCategory.value === '포켓몬') {
+    return [
+      { label: '타입', key: 'type', chips: ['불꽃', '물', '풀', '번개', '초', '격투', '악', '강철', '드래곤', '무색', '요정'] },
+      { label: '진화 단계', key: 'evolutionStage', chips: ['기본', '1진화', '2진화'] },
+      { label: '카드 형태', key: 'subType', chips: ['V', 'VMAX', 'VSTAR', 'ex', '메가 ex', '라디언트'] }
+    ]
+  } else if (activeCategory.value === '에너지') {
+    return [
+      { label: '종류', key: 'subType', chips: ['기본 에너지', '특수 에너지'] },
+      { label: '타입', key: 'type', chips: ['불꽃', '물', '풀', '번개', '초', '격투', '악', '강철', '드래곤', '요정'] }
+    ]
+  } else if (activeCategory.value === '트레이너스') {
+    return [
+      { label: '종류', key: 'subType', chips: ['아이템', '서포트', '포켓몬 도구', '스태디움'] }
+    ]
+  }
+  return []
+})
 
 const activeCategory = ref('포켓몬')
 const activeSort = ref('최신순')
-const selectedPokemon = ref('')
 const isFilterOpen = ref(false)
 
-const fetchMetadata = async () => {
-  try {
-    const response = await productService.getCardMetadata();
-    if (response.data) {
-      categoryTabs.value = response.data.categories || categoryTabs.value;
-      sortOptions.value = response.data.sortOptions || sortOptions.value;
-      typeFilters.value = response.data.cardTypes || typeFilters.value;
-      stageFilters.value = response.data.cardStages || stageFilters.value;
-    }
-  } catch (error) {
-    console.error('Failed to fetch metadata:', error);
+const activeFilters = ref({
+  type: '',
+  evolutionStage: '',
+  subType: ''
+})
+
+const toggleFilter = (key, value) => {
+  if (activeFilters.value[key] === value) {
+    activeFilters.value[key] = ''
+  } else {
+    activeFilters.value[key] = value
   }
+  fetchCards()
+}
+
+const fetchMetadata = async () => {
+  // Existing metadata logic - keep for other data if needed
 };
 
 const cards = ref([])
@@ -45,10 +67,13 @@ const fetchCards = async () => {
     const params = {
       gameType: 'POKEMON',
       pokemonCardType: activeCategory.value === '포켓몬' ? 'POKEMON' 
-                       : (activeCategory.value === '트레이너스' ? 'TRAINER' : 'ENERGY'),
+                       : (activeCategory.value === '트레이너스' ? 'TRAINER' : (activeCategory.value === '에너지' ? 'ENERGY' : null)),
       setName: searchParams.value.setName,
-      cardName: searchParams.value.cardName || selectedPokemon.value,
+      cardName: searchParams.value.cardName,
       cardNumber: searchParams.value.cardNumber,
+      type: activeFilters.value.type,
+      evolutionStage: activeFilters.value.evolutionStage,
+      subType: activeFilters.value.subType
     }
     const response = await productService.searchCards(params)
     cards.value = response.data
@@ -64,7 +89,9 @@ onMounted(() => {
   fetchCards();
 });
 
-watch([activeCategory, selectedPokemon], () => {
+watch([activeCategory], () => {
+  // Reset filters when category changes
+  activeFilters.value = { type: '', evolutionStage: '', subType: '' }
   fetchCards()
 })
 
@@ -118,7 +145,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
             <input v-model="searchParams.cardName" type="text" placeholder="피카츄, 리자몽, 뮤" aria-label="카드명">
           </div>
           <div class="field-block">
-            <label>세트명</label>
+            <label>확장팩명</label>
             <input v-model="searchParams.setName" type="text" placeholder="151, 흑염의 지배자" aria-label="세트명">
           </div>
           <div class="field-block">
@@ -133,17 +160,19 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
           </div>
         </div>
 
-        <div class="chip-section">
-          <h2>카드 타입</h2>
+        <div v-for="group in filterGroups" :key="group.label" class="chip-section">
+          <h2>{{ group.label }}</h2>
           <div class="chip-grid">
-            <button v-for="item in typeFilters" :key="item" type="button" class="filter-chip">{{ item }}</button>
-          </div>
-        </div>
-
-        <div class="chip-section">
-          <h2>카드 종류</h2>
-          <div class="chip-grid">
-            <button v-for="item in stageFilters" :key="item" type="button" class="filter-chip">{{ item }}</button>
+            <button
+              v-for="chip in group.chips"
+              :key="chip"
+              type="button"
+              class="filter-chip"
+              :class="{ active: activeFilters[group.key] === chip }"
+              @click="toggleFilter(group.key, chip)"
+            >
+              {{ chip }}
+            </button>
           </div>
         </div>
       </div>

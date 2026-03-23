@@ -8,6 +8,7 @@ const form = ref({
   gameType: 'POKEMON',
   pokemonCardType: 'POKEMON',
   subType: '',
+  type: '',
   setName: '',
   cardName: '',
   cardNumber: '',
@@ -48,6 +49,7 @@ const submitRequest = async () => {
       gameType: form.value.gameType,
       pokemonCardType: form.value.pokemonCardType,
       subType: form.value.subType,
+      type: form.value.type,
       setName: form.value.setName,
       cardName: form.value.cardName,
       cardNumber: form.value.cardNumber,
@@ -69,6 +71,7 @@ const submitRequest = async () => {
       gameType: 'POKEMON',
       pokemonCardType: 'POKEMON',
       subType: '',
+      type: '',
       setName: '',
       cardName: '',
       cardNumber: '',
@@ -142,6 +145,10 @@ const submitRequest = async () => {
           <label class="field">
             <span>세부 분류/속성</span>
             <input v-model="form.subType" type="text" placeholder="예: 서포트, 기본 에너지">
+          </label>
+          <label class="field">
+            <span>타입(속성)</span>
+            <input v-model="form.type" type="text" placeholder="예: 불꽃, 물, 무색">
           </label>
         </div>
         <div class="form-grid three">

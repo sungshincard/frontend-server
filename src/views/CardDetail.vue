@@ -99,6 +99,7 @@ const gradingLabel = (listing) => {
         <div class="spec-grid">
           <div><span>종류</span><strong>{{ card.pokemonCardType || '정보 없음' }}</strong></div>
           <div v-if="card.subType"><span>세부 분류</span><strong>{{ card.subType }}</strong></div>
+          <div v-if="card.type"><span>타입(속성)</span><strong>{{ card.type }}</strong></div>
           <template v-if="card.pokemonCardType === 'POKEMON'">
             <div><span>HP</span><strong>{{ card.hp }}</strong></div>
             <div><span>진화 단계</span><strong>{{ card.evolutionStage }}</strong></div>
