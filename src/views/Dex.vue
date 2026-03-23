@@ -8,14 +8,17 @@ const dexEntries = ref([])
 const isLoading = ref(true)
 const isFirstLoad = ref(true)
 const activeRegion = ref('전체')
+const activeType = ref('전체')
 const searchQuery = ref('')
 const regions = ['전체', '관동', '성도', '호연', '신오', '하나', '칼로스', '알로라', '가라르', '히스이', '팔데아']
+const pokemonTypes = ['전체', '풀', '불꽃', '물', '벌레', '무색', '독', '번개', '땅', '요정', '격투', '초', '바위', '강철', '얼음', '고스트', '드래곤', '악', '비행']
 
 const fetchPokemons = async () => {
   try {
     isLoading.value = true
     const params = {}
     if (activeRegion.value !== '전체') params.region = activeRegion.value
+    if (activeType.value !== '전체') params.type = activeType.value
     if (searchQuery.value) params.name = searchQuery.value
 
     const response = await productService.getPokemons(params)
@@ -47,6 +50,11 @@ const toggleRegion = (region) => {
   fetchPokemons()
 }
 
+const toggleType = (type) => {
+  activeType.value = type
+  fetchPokemons()
+}
+
 onMounted(() => {
   fetchPokemons()
 })
@@ -75,17 +83,32 @@ const goFilteredCards = (entry) => {
       </div>
 
       <div class="dex-panel">
-        <div class="dex-panel-head">
-          <strong>도감 탐색</strong>
-          <div class="lang-tags">
-            <span 
-              v-for="region in regions" 
-              :key="region" 
-              :class="{ active: activeRegion === region }"
-              @click="toggleRegion(region)"
-            >
-              {{ region }}
-            </span>
+        <div class="dex-panel-head filters">
+          <div class="filter-row">
+            <strong>지방별</strong>
+            <div class="lang-tags">
+              <span 
+                v-for="region in regions" 
+                :key="region" 
+                :class="{ active: activeRegion === region }"
+                @click="toggleRegion(region)"
+              >
+                {{ region }}
+              </span>
+            </div>
+          </div>
+          <div class="filter-row">
+            <strong>타입별</strong>
+            <div class="lang-tags">
+              <span 
+                v-for="t in pokemonTypes" 
+                :key="t" 
+                :class="{ active: activeType === t }"
+                @click="toggleType(t)"
+              >
+                {{ t }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -183,18 +206,27 @@ const goFilteredCards = (entry) => {
   background: var(--color-background-elevated);
 }
 
-.dex-panel-head {
+.dex-panel-head.filters {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--color-border);
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 24px;
 }
 
-.dex-panel-head strong {
+.filter-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+}
+
+.filter-row strong {
   color: var(--color-text-strong);
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
+  min-width: 60px;
+  padding-top: 8px;
 }
 
 .lang-tags {
