@@ -43,11 +43,12 @@ const fetchCards = async () => {
   try {
     isLoading.value = true
     const params = {
-      gameType: activeCategory.value === '포켓몬' ? 'POKEMON' : 'YU_GI_OH',
+      gameType: 'POKEMON',
+      pokemonCardType: activeCategory.value === '포켓몬' ? 'POKEMON' 
+                       : (activeCategory.value === '트레이너스' ? 'TRAINER' : 'ENERGY'),
       setName: searchParams.value.setName,
       cardName: searchParams.value.cardName || selectedPokemon.value,
       cardNumber: searchParams.value.cardNumber,
-      // sort: activeSort.value // Backend should support mapping sort strings
     }
     const response = await productService.searchCards(params)
     cards.value = response.data

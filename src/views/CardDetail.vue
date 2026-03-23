@@ -77,14 +77,14 @@ const gradingLabel = (listing) => {
     <section class="detail-hero mobile-shell">
       <div class="visual-column">
         <div class="main-visual artwork">
-          <div class="phone-card">
+          <div class="phone-card" :class="card.pokemonCardType?.toLowerCase()">
             <div class="phone-card-head">
-              <span>{{ card.name }}</span>
-              <small>{{ card.hp }}</small>
+              <span>{{ card.cardName }}</span>
+              <small v-if="card.pokemonCardType === 'POKEMON'">{{ card.hp }} HP</small>
             </div>
             <div class="phone-card-art"></div>
             <div class="phone-card-foot">
-              <span>{{ card.type }}</span>
+              <span>{{ card.pokemonCardType === 'POKEMON' ? (card.evolutionStage || '기본') : (card.subType || card.pokemonCardType) }}</span>
               <span>{{ card.cardNumber }}</span>
             </div>
           </div>
@@ -97,11 +97,14 @@ const gradingLabel = (listing) => {
         <p class="summary">{{ card.summary }}</p>
 
         <div class="spec-grid">
+          <div><span>종류</span><strong>{{ card.pokemonCardType || '정보 없음' }}</strong></div>
+          <div v-if="card.subType"><span>세부 분류</span><strong>{{ card.subType }}</strong></div>
+          <template v-if="card.pokemonCardType === 'POKEMON'">
+            <div><span>HP</span><strong>{{ card.hp }}</strong></div>
+            <div><span>진화 단계</span><strong>{{ card.evolutionStage }}</strong></div>
+          </template>
           <div><span>레어리티</span><strong>{{ card.rarity }}</strong></div>
           <div><span>언어</span><strong>{{ card.language }}</strong></div>
-          <div><span>타입</span><strong>{{ card.type }}</strong></div>
-          <div><span>HP</span><strong>{{ card.hp }}</strong></div>
-          <div><span>진화 단계</span><strong>{{ card.evolutionStage || card.stage }}</strong></div>
           <div><span>일러스트</span><strong>{{ card.illustrator }}</strong></div>
           <div><span>확장팩 넘버</span><strong>{{ card.expansionCode }}</strong></div>
           <div><span>블록</span><strong>{{ card.block }}</strong></div>

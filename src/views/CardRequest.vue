@@ -6,6 +6,8 @@ import { toast } from 'vue3-toastify'
 const showModal = ref(false)
 const form = ref({
   gameType: 'POKEMON',
+  pokemonCardType: 'POKEMON',
+  subType: '',
   setName: '',
   cardName: '',
   cardNumber: '',
@@ -43,13 +45,15 @@ const submitRequest = async () => {
   try {
     isLoading.value = true
     await requestService.createRequest({
-      gameType: form.value.gameType, // Already 'POKEMON' etc.
+      gameType: form.value.gameType,
+      pokemonCardType: form.value.pokemonCardType,
+      subType: form.value.subType,
       setName: form.value.setName,
       cardName: form.value.cardName,
       cardNumber: form.value.cardNumber,
       rarity: form.value.rarity,
-      hp: form.value.hp ? parseInt(form.value.hp) : null,
-      evolutionStage: form.value.evolutionStage,
+      hp: form.value.pokemonCardType === 'POKEMON' && form.value.hp ? parseInt(form.value.hp) : null,
+      evolutionStage: form.value.pokemonCardType === 'POKEMON' ? form.value.evolutionStage : null,
       illustrator: form.value.illustrator,
       expansionCode: form.value.expansionCode,
       block: form.value.block,
@@ -63,6 +67,8 @@ const submitRequest = async () => {
     // Reset form
     form.value = {
       gameType: 'POKEMON',
+      pokemonCardType: 'POKEMON',
+      subType: '',
       setName: '',
       cardName: '',
       cardNumber: '',
@@ -116,7 +122,7 @@ const submitRequest = async () => {
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal-content">
         <h2>새 카드 등록 요청</h2>
-        <div class="form-grid two">
+        <div class="form-grid three">
           <label class="field">
             <span>게임</span>
             <select v-model="form.gameType">
@@ -126,11 +132,23 @@ const submitRequest = async () => {
             </select>
           </label>
           <label class="field">
+            <span>종류</span>
+            <select v-model="form.pokemonCardType">
+              <option value="POKEMON">포켓몬</option>
+              <option value="ENERGY">에너지</option>
+              <option value="TRAINER">트레이너스</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>세부 분류/속성</span>
+            <input v-model="form.subType" type="text" placeholder="예: 서포트, 기본 에너지">
+          </label>
+        </div>
+        <div class="form-grid three">
+          <label class="field">
             <span>세트명</span>
             <input v-model="form.setName" type="text" placeholder="예: 포켓몬 카드 151">
           </label>
-        </div>
-        <div class="form-grid two">
           <label class="field">
             <span>카드명</span>
             <input v-model="form.cardName" type="text" placeholder="예: 피카츄 마스터볼 미러">
@@ -145,14 +163,16 @@ const submitRequest = async () => {
             <span>레어리티(등급)</span>
             <input v-model="form.rarity" type="text" placeholder="예: C, U, R, RR">
           </label>
-          <label class="field">
-            <span>체력 (HP)</span>
-            <input v-model="form.hp" type="number" placeholder="예: 60">
-          </label>
-          <label class="field">
-            <span>진화 단계</span>
-            <input v-model="form.evolutionStage" type="text" placeholder="예: 기본, 1진화">
-          </label>
+          <template v-if="form.pokemonCardType === 'POKEMON'">
+            <label class="field">
+              <span>체력 (HP)</span>
+              <input v-model="form.hp" type="number" placeholder="예: 60">
+            </label>
+            <label class="field">
+              <span>진화 단계</span>
+              <input v-model="form.evolutionStage" type="text" placeholder="예: 기본, 1진화">
+            </label>
+          </template>
         </div>
         <div class="form-grid three">
           <label class="field">
