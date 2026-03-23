@@ -7,6 +7,12 @@ const form = ref({
   setName: '',
   cardName: '',
   cardNumber: '',
+  rarity: '',
+  hp: '',
+  evolutionStage: '',
+  illustrator: '',
+  expansionCode: '',
+  block: '',
   requestNote: '',
 })
 
@@ -92,9 +98,37 @@ const submitRequest = () => {
             <input v-model="form.cardNumber" type="text" placeholder="예: 025/165">
           </label>
         </div>
+        <div class="form-grid three">
+          <label class="field">
+            <span>레어리티(등급)</span>
+            <input v-model="form.rarity" type="text" placeholder="예: C, U, R, RR">
+          </label>
+          <label class="field">
+            <span>체력 (HP)</span>
+            <input v-model="form.hp" type="number" placeholder="예: 60">
+          </label>
+          <label class="field">
+            <span>진화 단계</span>
+            <input v-model="form.evolutionStage" type="text" placeholder="예: 기본, 1진화">
+          </label>
+        </div>
+        <div class="form-grid three">
+          <label class="field">
+            <span>일러스트레이터</span>
+            <input v-model="form.illustrator" type="text" placeholder="예: chibi">
+          </label>
+          <label class="field">
+            <span>확장팩 넘버</span>
+            <input v-model="form.expansionCode" type="text" placeholder="예: s6a">
+          </label>
+          <label class="field">
+            <span>블록</span>
+            <input v-model="form.block" type="text" placeholder="예: E">
+          </label>
+        </div>
         <label class="field">
           <span>요청 메모</span>
-          <textarea v-model="form.requestNote" rows="4" placeholder="희망 언어, 참고 이미지 설명, 요청 이유 등을 적어 주세요." />
+          <textarea v-model="form.requestNote" rows="4" placeholder="참고 이미지 설명, 요청 이유 등을 적어 주세요." />
         </label>
         <div class="submit-row">
           <button type="button" class="cancel-button" @click="showModal = false">취소</button>
@@ -143,6 +177,7 @@ const submitRequest = () => {
 
 .form-grid { display: grid; gap: 16px; margin-bottom: 16px; }
 .form-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .field { display: grid; gap: 8px; margin-bottom: 16px; }
 .field span { font-size: 14px; font-weight: 600; }
 .field input, .field textarea, .field select {
@@ -154,7 +189,7 @@ const submitRequest = () => {
   padding: 12px 20px; border: 0; border-radius: 8px; background: var(--color-primary); color: #2c2407; font-weight: 700; cursor: pointer;
 }
 @media (max-width: 720px) {
-  .form-grid.two { grid-template-columns: 1fr; }
+  .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }
   .page-head { flex-direction: column; align-items: flex-start; gap: 16px; }
 }
 </style>

@@ -79,8 +79,10 @@ const gradingLabel = (listing) => {
           <div><span>언어</span><strong>{{ card.language }}</strong></div>
           <div><span>타입</span><strong>{{ card.type }}</strong></div>
           <div><span>HP</span><strong>{{ card.hp }}</strong></div>
-          <div><span>약점</span><strong>{{ card.weakness }}</strong></div>
-          <div><span>진화 단계</span><strong>{{ card.stage }}</strong></div>
+          <div><span>진화 단계</span><strong>{{ card.evolutionStage || card.stage }}</strong></div>
+          <div><span>일러스트</span><strong>{{ card.illustrator }}</strong></div>
+          <div><span>확장팩 넘버</span><strong>{{ card.expansionCode }}</strong></div>
+          <div><span>블록</span><strong>{{ card.block }}</strong></div>
         </div>
 
         <div class="price-panel">

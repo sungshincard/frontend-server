@@ -1,20 +1,39 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { cards } from '../data/catalog'
+import apiClient from '../services/api'
 
 const router = useRouter()
 const route = useRoute()
 
-const categoryTabs = ['포켓몬', '트레이너스', '에너지']
-const sortOptions = ['최신순', '인기순', '최저가순', '최근 거래순']
-const typeFilters = ['불꽃', '물', '풀', '전기', '에스퍼', '악', '드래곤']
-const stageFilters = ['기본', '1진화', '2진화', '포켓몬 ex', '아이템', '서포트']
+const categoryTabs = ref(['포켓몬', '트레이너스', '에너지'])
+const sortOptions = ref(['최신순', '인기순', '최저가순', '최근 거래순'])
+const typeFilters = ref(['불꽃', '물', '풀', '전기', '에스퍼', '악', '드래곤'])
+const stageFilters = ref(['기본', '1진화', '2진화', '포켓몬 ex', '아이템', '서포트'])
 
 const activeCategory = ref('포켓몬')
 const activeSort = ref('최신순')
 const selectedPokemon = ref('')
 const isFilterOpen = ref(false)
+
+const fetchMetadata = async () => {
+  try {
+    const response = await apiClient.get('/metadata/cards');
+    if (response) {
+      categoryTabs.value = response.categories || categoryTabs.value;
+      sortOptions.value = response.sortOptions || sortOptions.value;
+      typeFilters.value = response.cardTypes || typeFilters.value;
+      stageFilters.value = response.cardStages || stageFilters.value;
+    }
+  } catch (error) {
+    console.error('Failed to fetch metadata:', error);
+  }
+};
+
+onMounted(() => {
+  fetchMetadata();
+});
 
 watch(
   () => route.query,
