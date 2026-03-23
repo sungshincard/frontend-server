@@ -1,8 +1,7 @@
 <script setup>
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cards } from '../data/catalog'
-import apiClient from '../services/api'
+import productService from '../services/productService'
 
 const router = useRouter()
 const route = useRoute()
@@ -19,37 +18,56 @@ const isFilterOpen = ref(false)
 
 const fetchMetadata = async () => {
   try {
-    const response = await apiClient.get('/metadata/cards');
-    if (response) {
-      categoryTabs.value = response.categories || categoryTabs.value;
-      sortOptions.value = response.sortOptions || sortOptions.value;
-      typeFilters.value = response.cardTypes || typeFilters.value;
-      stageFilters.value = response.cardStages || stageFilters.value;
+    const response = await productService.getCardMetadata();
+    if (response.data) {
+      categoryTabs.value = response.data.categories || categoryTabs.value;
+      sortOptions.value = response.data.sortOptions || sortOptions.value;
+      typeFilters.value = response.data.cardTypes || typeFilters.value;
+      stageFilters.value = response.data.cardStages || stageFilters.value;
     }
   } catch (error) {
     console.error('Failed to fetch metadata:', error);
   }
 };
 
+const cards = ref([])
+const isLoading = ref(false)
+
+const searchParams = ref({
+  setName: '',
+  cardName: '',
+  cardNumber: '',
+})
+
+const fetchCards = async () => {
+  try {
+    isLoading.value = true
+    const params = {
+      gameType: activeCategory.value === '포켓몬' ? 'POKEMON' : 'YU_GI_OH',
+      setName: searchParams.value.setName,
+      cardName: searchParams.value.cardName || selectedPokemon.value,
+      cardNumber: searchParams.value.cardNumber,
+      // sort: activeSort.value // Backend should support mapping sort strings
+    }
+    const response = await productService.searchCards(params)
+    cards.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch cards:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
 onMounted(() => {
   fetchMetadata();
+  fetchCards();
 });
 
-watch(
-  () => route.query,
-  (query) => {
-    activeCategory.value = query.category || '포켓몬'
-    selectedPokemon.value = query.pokemon || ''
-  },
-  { immediate: true }
-)
+watch([activeCategory, selectedPokemon], () => {
+  fetchCards()
+})
 
-const visibleCards = computed(() =>
-  cards.filter((card) => {
-    const categoryMatch = activeCategory.value === '포켓몬' ? card.category === '포켓몬' : card.category === activeCategory.value
-    return categoryMatch
-  })
-)
+const visibleCards = computed(() => cards.value)
 
 const goCard = (cardId) => router.push(`/cards/${cardId}`)
 </script>
@@ -63,8 +81,8 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
       </div>
 
       <div class="search-shell">
-        <input type="text" placeholder="포켓몬 이름, 카드명, 카드번호를 검색하세요" aria-label="포켓몬 이름 또는 카드명 검색">
-        <button type="button" class="search-button">검색</button>
+        <input v-model="searchParams.cardName" type="text" placeholder="포켓몬 이름, 카드명, 카드번호를 검색하세요" aria-label="포켓몬 이름 또는 카드명 검색" @keyup.enter="fetchCards">
+        <button type="button" class="search-button" @click="fetchCards">검색</button>
       </div>
     </section>
 
@@ -96,15 +114,15 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
         <div class="filter-grid">
           <div class="field-block">
             <label>카드명</label>
-            <input type="text" placeholder="피카츄, 리자몽, 뮤" aria-label="카드명">
+            <input v-model="searchParams.cardName" type="text" placeholder="피카츄, 리자몽, 뮤" aria-label="카드명">
           </div>
           <div class="field-block">
             <label>세트명</label>
-            <input type="text" placeholder="151, 흑염의 지배자" aria-label="세트명">
+            <input v-model="searchParams.setName" type="text" placeholder="151, 흑염의 지배자" aria-label="세트명">
           </div>
           <div class="field-block">
             <label>카드번호</label>
-            <input type="text" placeholder="025/165" aria-label="카드번호">
+            <input v-model="searchParams.cardNumber" type="text" placeholder="025/165" aria-label="카드번호">
           </div>
           <div class="field-block">
             <label>정렬 옵션</label>

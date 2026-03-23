@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import apiClient from '../services/api';
+import authService from '../services/authService';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -115,19 +115,18 @@ const handleSubmit = async () => {
 
   try {
     if (isLogin.value) {
-      const response = await apiClient.post('/member/login', {
-        email: email.value,
-        password: password.value
-      });
+      const response = await authService.login(email.value, password.value);
       const token = response.data;
       if (token) {
         authStore.setToken(token);
+        const userRes = await authService.getMe();
+        authStore.setUser(userRes.data);
         router.push('/');
       } else {
         errorMessage.value = '토큰을 받지 못했습니다. 다시 시도해 주세요.';
       }
     } else {
-      await apiClient.post('/member/join', {
+      await authService.join({
         email: email.value,
         password: password.value,
         nickname: nickname.value,

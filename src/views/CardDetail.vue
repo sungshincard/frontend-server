@@ -1,17 +1,36 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cardGroups, getCardById, getCardsByGroupId, getStoreByName } from '../data/catalog'
+import { cardGroups, getCardsByGroupId, getStoreByName } from '../data/catalog'
 import { useWatchlistStore } from '../stores/watchlist'
+import productService from '../services/productService'
 
 const route = useRoute()
 const router = useRouter()
 const watchlistStore = useWatchlistStore()
 const marketFilters = ['모든 상태', 'A', 'B', 'C', 'D', 'PSA10', 'PSA9', 'PSA8 이하', 'BGS10 BL', 'BGS10 G']
-const activeMarketFilter = ref('모든 상태')
-const showPurchaseOverlay = ref(false)
+const card = ref(null)
+const isLoading = ref(true)
 
-const card = computed(() => getCardById(route.params.cardId))
+const fetchCardDetail = async (id) => {
+  try {
+    isLoading.value = true
+    const response = await productService.getCardDetail(id)
+    card.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch card detail:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCardDetail(route.params.cardId)
+})
+
+watch(() => route.params.cardId, (newId) => {
+  if (newId) fetchCardDetail(newId)
+})
 
 const relatedCards = computed(() => {
   if (!card.value) return []
@@ -51,7 +70,10 @@ const gradingLabel = (listing) => {
 </script>
 
 <template>
-  <div v-if="card" class="detail-page container">
+  <div v-if="isLoading" class="loading-state container">
+    <p>데이터를 불러오는 중입니다...</p>
+  </div>
+  <div v-else-if="card" class="detail-page container">
     <section class="detail-hero mobile-shell">
       <div class="visual-column">
         <div class="main-visual artwork">

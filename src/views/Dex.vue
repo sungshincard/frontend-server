@@ -1,40 +1,38 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import productService from '../services/productService'
 
 const router = useRouter()
+const dexEntries = ref([])
+const isLoading = ref(true)
 
-const dexTabs = ['전국도감', '관동', '성도', '호연', '신오', '하나', '칼로스', '팔데아']
+const fetchPokemons = async () => {
+  try {
+    isLoading.value = true
+    const response = await productService.getPokemons()
+    dexEntries.value = response.data.map(p => ({
+      no: p.dexNumber.toString().padStart(3, '0'),
+      name: p.name,
+      id: p.id
+    }))
+  } catch (error) {
+    console.error('Failed to fetch pokemons:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
-const dexEntries = [
-  { no: '001', name: '이상해씨', groupId: 'pikachu' },
-  { no: '004', name: '파이리', groupId: 'charizard' },
-  { no: '007', name: '꼬부기', groupId: 'pikachu' },
-  { no: '025', name: '피카츄', groupId: 'pikachu' },
-  { no: '037', name: '식스테일', groupId: 'charizard' },
-  { no: '052', name: '나옹', groupId: 'pikachu' },
-  { no: '133', name: '이브이', groupId: 'pikachu' },
-  { no: '150', name: '뮤츠', groupId: 'mew' },
-  { no: '151', name: '뮤', groupId: 'mew' },
-  { no: '152', name: '치코리타', groupId: 'pikachu' },
-  { no: '155', name: '브케인', groupId: 'charizard' },
-  { no: '158', name: '리아코', groupId: 'pikachu' },
-  { no: '172', name: '피츄', groupId: 'pikachu' },
-  { no: '196', name: '에브이', groupId: 'mew' },
-  { no: '197', name: '블래키', groupId: 'mew' },
-  { no: '252', name: '나무지기', groupId: 'pikachu' },
-  { no: '255', name: '아차모', groupId: 'charizard' },
-  { no: '258', name: '물짱이', groupId: 'pikachu' },
-  { no: '387', name: '모부기', groupId: 'pikachu' },
-  { no: '390', name: '불꽃숭이', groupId: 'charizard' },
-  { no: '393', name: '팽도리', groupId: 'pikachu' },
-]
+onMounted(() => {
+  fetchPokemons()
+})
+
 
 const goFilteredCards = (entry) => {
   router.push({
     path: '/cards',
     query: {
       category: '포켓몬',
-      group: entry.groupId,
       pokemon: entry.name,
     },
   })
@@ -56,11 +54,17 @@ const goFilteredCards = (entry) => {
         <div class="dex-panel-head">
           <strong>도감 탐색</strong>
           <div class="lang-tags">
-            <span v-for="tab in dexTabs" :key="tab">{{ tab }}</span>
+            <span v-for="tab in ['전국도감']" :key="tab">{{ tab }}</span>
           </div>
         </div>
 
-        <div class="dex-grid">
+        <div v-if="isLoading" class="loading-state">
+           <p>포켓몬 도감을 불러오는 중입니다...</p>
+        </div>
+        <div v-else-if="dexEntries.length === 0" class="empty-state">
+           <p>등록된 포켓몬이 없습니다.</p>
+        </div>
+        <div v-else class="dex-grid">
           <button
             v-for="entry in dexEntries"
             :key="entry.no"

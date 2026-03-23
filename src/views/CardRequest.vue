@@ -1,5 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import requestService from '../services/requestService'
+import { toast } from 'vue3-toastify'
 
 const showModal = ref(false)
 const form = ref({
@@ -17,26 +19,66 @@ const form = ref({
 })
 
 const myRequests = ref([])
+const isLoading = ref(false)
+
+const fetchMyRequests = async () => {
+  try {
+    const response = await requestService.getMyRequests()
+    myRequests.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch requests:', error)
+  }
+}
 
 onMounted(() => {
-  // Mock data for now, ideally fetch from API /api/v1/card-requests/me
-  myRequests.value = [
-    { id: 1, gameType: 'POKEMON', cardName: '피카츄 마스터볼 미러', status: 'PENDING', reviewedAt: null },
-    { id: 2, gameType: 'YUGIOH', cardName: '푸른 눈의 백룡', status: 'APPROVED', reviewedAt: '2023-10-01' },
-    { id: 3, gameType: 'ONE_PIECE', cardName: '샹크스 슈퍼 패러렐', status: 'REJECTED', reviewedAt: '2023-10-05', rejectReason: '이미 등록된 카드입니다.' }
-  ]
+  fetchMyRequests()
 })
 
-const submitRequest = () => {
-  // Submit via API
-  console.log('Submitting', form.value)
-  showModal.value = false
-  // Push to mock list
-  myRequests.value.unshift({
-    id: Date.now(),
-    ...form.value,
-    status: 'PENDING'
-  })
+const submitRequest = async () => {
+  if (!form.value.cardName || !form.value.setName) {
+    toast.warning('카드명과 세트명은 필수 입력 항목입니다.')
+    return
+  }
+
+  try {
+    isLoading.value = true
+    await requestService.createRequest({
+      gameType: form.value.gameType, // Already 'POKEMON' etc.
+      setName: form.value.setName,
+      cardName: form.value.cardName,
+      cardNumber: form.value.cardNumber,
+      rarity: form.value.rarity,
+      hp: form.value.hp ? parseInt(form.value.hp) : null,
+      evolutionStage: form.value.evolutionStage,
+      illustrator: form.value.illustrator,
+      expansionCode: form.value.expansionCode,
+      block: form.value.block,
+      referenceImageUrl: '', 
+      requestNote: form.value.requestNote,
+    })
+
+    toast.success('카드 추가 요청이 성공적으로 접수되었습니다.')
+    showModal.value = false
+    fetchMyRequests() // Refresh list
+    // Reset form
+    form.value = {
+      gameType: 'POKEMON',
+      setName: '',
+      cardName: '',
+      cardNumber: '',
+      rarity: '',
+      hp: '',
+      evolutionStage: '',
+      illustrator: '',
+      expansionCode: '',
+      block: '',
+      requestNote: '',
+    }
+  } catch (error) {
+    console.error('Failed to submit request:', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
@@ -131,8 +173,10 @@ const submitRequest = () => {
           <textarea v-model="form.requestNote" rows="4" placeholder="참고 이미지 설명, 요청 이유 등을 적어 주세요." />
         </label>
         <div class="submit-row">
-          <button type="button" class="cancel-button" @click="showModal = false">취소</button>
-          <button type="button" class="submit-button" @click="submitRequest">요청 등록</button>
+          <button type="button" class="cancel-button" :disabled="isLoading" @click="showModal = false">취소</button>
+          <button type="button" class="submit-button" :disabled="isLoading" @click="submitRequest">
+             {{ isLoading ? '처리 중...' : '요청 등록' }}
+          </button>
         </div>
       </div>
     </div>
