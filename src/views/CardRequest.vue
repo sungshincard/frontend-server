@@ -1,15 +1,30 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import requestService from '../services/requestService'
+import productService from '../services/productService'
 import { toast } from 'vue3-toastify'
 
 const showModal = ref(false)
+const metadata = ref({
+  categories: [],
+  elementalTypes: [],
+  cardSets: []
+})
+
+const fetchMetadata = async () => {
+  try {
+    const response = await productService.getMetadata('POKEMON')
+    metadata.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch metadata:', error)
+  }
+}
+
 const form = ref({
   gameType: 'POKEMON',
-  pokemonCardType: 'POKEMON',
-  subType: '',
-  type: '',
-  setName: '',
+  categoryId: null,
+  elementalTypeId: null,
+  cardSetId: null,
   cardName: '',
   cardNumber: '',
   rarity: '',
@@ -35,10 +50,11 @@ const fetchMyRequests = async () => {
 
 onMounted(() => {
   fetchMyRequests()
+  fetchMetadata()
 })
 
 const submitRequest = async () => {
-  if (!form.value.cardName || !form.value.setName) {
+  if (!form.value.cardName || !form.value.cardSetId) {
     toast.warning('카드명과 세트명은 필수 입력 항목입니다.')
     return
   }
@@ -47,15 +63,14 @@ const submitRequest = async () => {
     isLoading.value = true
     await requestService.createRequest({
       gameType: form.value.gameType,
-      pokemonCardType: form.value.pokemonCardType,
-      subType: form.value.subType,
-      type: form.value.type,
-      setName: form.value.setName,
+      categoryId: form.value.categoryId,
+      elementalTypeId: form.value.elementalTypeId,
+      cardSetId: form.value.cardSetId,
       cardName: form.value.cardName,
       cardNumber: form.value.cardNumber,
       rarity: form.value.rarity,
-      hp: form.value.pokemonCardType === 'POKEMON' && form.value.hp ? parseInt(form.value.hp) : null,
-      evolutionStage: form.value.pokemonCardType === 'POKEMON' ? form.value.evolutionStage : null,
+      hp: form.value.hp ? parseInt(form.value.hp) : null,
+      evolutionStage: form.value.evolutionStage,
       illustrator: form.value.illustrator,
       expansionCode: form.value.expansionCode,
       block: form.value.block,
@@ -69,10 +84,9 @@ const submitRequest = async () => {
     // Reset form
     form.value = {
       gameType: 'POKEMON',
-      pokemonCardType: 'POKEMON',
-      subType: '',
-      type: '',
-      setName: '',
+      categoryId: null,
+      elementalTypeId: null,
+      cardSetId: null,
       cardName: '',
       cardNumber: '',
       rarity: '',
@@ -135,26 +149,27 @@ const submitRequest = async () => {
             </select>
           </label>
           <label class="field">
-            <span>종류</span>
-            <select v-model="form.pokemonCardType">
-              <option value="POKEMON">포켓몬</option>
-              <option value="ENERGY">에너지</option>
-              <option value="TRAINER">트레이너스</option>
+            <span>세부 분류</span>
+            <select v-model="form.categoryId">
+              <option :value="null">선택 안함</option>
+              <option v-for="cat in metadata.categories" :key="cat.id" :value="cat.id">{{ cat.displayName }}</option>
             </select>
           </label>
           <label class="field">
-            <span>세부 분류/속성</span>
-            <input v-model="form.subType" type="text" placeholder="예: 서포트, 기본 에너지">
-          </label>
-          <label class="field">
             <span>타입(속성)</span>
-            <input v-model="form.type" type="text" placeholder="예: 불꽃, 물, 무색">
+            <select v-model="form.elementalTypeId">
+              <option :value="null">선택 안함</option>
+              <option v-for="t in metadata.elementalTypes" :key="t.id" :value="t.id">{{ t.displayName }}</option>
+            </select>
           </label>
         </div>
         <div class="form-grid three">
           <label class="field">
             <span>세트명</span>
-            <input v-model="form.setName" type="text" placeholder="예: 포켓몬 카드 151">
+            <select v-model="form.cardSetId">
+              <option :value="null">세트 선택</option>
+              <option v-for="set in metadata.cardSets" :key="set.id" :value="set.id">{{ set.name }}</option>
+            </select>
           </label>
           <label class="field">
             <span>카드명</span>
@@ -170,7 +185,7 @@ const submitRequest = async () => {
             <span>레어리티(등급)</span>
             <input v-model="form.rarity" type="text" placeholder="예: C, U, R, RR">
           </label>
-          <template v-if="form.pokemonCardType === 'POKEMON'">
+          <template v-if="form.gameType === 'POKEMON'">
             <label class="field">
               <span>체력 (HP)</span>
               <input v-model="form.hp" type="number" placeholder="예: 60">

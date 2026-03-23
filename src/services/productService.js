@@ -11,8 +11,8 @@ const productService = {
   },
   
   // Pokemon APIs
-  getPokemons() {
-    return apiClient.get('/v1/pokemons');
+  getPokemons(params = {}) {
+    return apiClient.get('/v1/pokemons', { params });
   },
   
   getPokemonDetail(id) {
@@ -20,8 +20,8 @@ const productService = {
   },
   
   // Metadata APIs
-  getCardMetadata() {
-    return apiClient.get('/v1/metadata/cards');
+  getMetadata(gameType = 'POKEMON') {
+    return apiClient.get('/v1/metadata/cards', { params: { gameType } });
   }
 };
 
