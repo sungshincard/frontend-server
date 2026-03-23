@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
+import { toast } from 'vue3-toastify';
 
 const apiClient = axios.create({
   baseURL: 'http://localhost:8080/api', // Backend server URL
@@ -22,11 +23,17 @@ apiClient.interceptors.request.use(config => {
 apiClient.interceptors.response.use(
   response => response.data,
   error => {
-    // Check if the token is invalid or expired
-    if (error.response && error.response.status === 401) {
-      const authStore = useAuthStore();
-      authStore.logout();
-      window.location.href = '/login';
+    if (error.response) {
+      if (error.response.status === 401) {
+        const authStore = useAuthStore();
+        authStore.logout();
+        toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
+        window.location.href = '/login';
+      } else {
+        toast.error(error.response.data?.message || '서버 오류가 발생했습니다.');
+      }
+    } else {
+      toast.error('네트워크 오류가 발생했습니다.');
     }
     return Promise.reject(error);
   }

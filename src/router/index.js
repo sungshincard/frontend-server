@@ -21,6 +21,7 @@ import ReviewForm from '../views/ReviewForm.vue';
 import DisputeForm from '../views/DisputeForm.vue';
 import Policy from '../views/Policy.vue';
 import { useAuthStore } from '../stores/auth';
+import { toast } from 'vue3-toastify';
 
 const routes = [
   {
@@ -151,6 +152,7 @@ router.beforeEach((to, from, next) => {
   const authRequired = !isPublicPage;
 
   if (authRequired && !authStore.isAuthenticated) {
+    toast.error('로그인이 필요한 서비스입니다.');
     next('/login');
   } else if (to.path === '/login' && authStore.isAuthenticated) {
     next('/');
