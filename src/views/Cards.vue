@@ -153,11 +153,34 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
           </div>
         </article>
       </div>
+      
+      <div class="load-more-container" v-if="visibleCards.length > 0">
+        <button type="button" class="load-more-btn" @click="() => {}">더보기 (무한 스크롤 모의)</button>
+      </div>
     </section>
   </div>
 </template>
 
 <style scoped>
+/* (Added Load More CSS) */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+.load-more-btn {
+  padding: 14px 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-strong);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.load-more-btn:hover {
+  background: var(--color-panel-soft);
+}
 .cards-page {
   padding: 40px 0 80px;
 }
