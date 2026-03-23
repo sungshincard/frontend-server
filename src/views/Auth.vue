@@ -447,7 +447,7 @@ const handleSubmit = async () => {
   outline: none;
   transition: border-color 0.2s;
   box-sizing: border-box;
-  background-color: white;
+  background-color: var(--color-panel);
   color: var(--color-text);
 }
 
@@ -473,7 +473,7 @@ const handleSubmit = async () => {
   font-size: 11px;
   font-weight: 500;
   color: #94a3b8;
-  background: #f1f5f9;
+  background: var(--color-panel-soft);
   border-radius: 4px;
   padding: 1px 6px;
   vertical-align: middle;
@@ -496,7 +496,7 @@ const handleSubmit = async () => {
   margin: 0 auto 8px;
   overflow: hidden;
   transition: border-color 0.2s, background 0.2s;
-  background: #f8fafc;
+  background: var(--color-background-elevated);
 }
 
 .avatar-upload-area:hover {
@@ -564,7 +564,7 @@ const handleSubmit = async () => {
 .gender-item.active {
   border-color: var(--color-primary);
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-primary-text);
   font-weight: 700;
 }
 

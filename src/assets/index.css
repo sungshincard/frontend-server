@@ -33,6 +33,7 @@
   
   --color-text: var(--color-text-muted);
   --color-text-light: var(--color-text-subtle);
+  --color-primary-text: #ffffff;
 }
 
 :root[data-theme='dark'] {
@@ -66,6 +67,7 @@
   
   --color-text: var(--color-text-muted);
   --color-text-light: var(--color-text-subtle);
+  --color-primary-text: #000000;
 }
 
 *,

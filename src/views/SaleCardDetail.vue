@@ -1,12 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getListingById, getStoreByName } from '../data/catalog'
+import { getSaleCardById, getStoreByName } from '../data/catalog'
 
 const route = useRoute()
 const router = useRouter()
 
-const listing = computed(() => getListingById(route.params.listingId))
+const listing = computed(() => getSaleCardById(route.params.saleCardId))
 const card = computed(() => listing.value?.card)
 
 const goCard = () => {
@@ -19,7 +19,7 @@ const goCard = () => {
 
 const goCheckout = () => {
   if (listing.value) {
-    router.push({ path: '/orders/checkout', query: { listingId: listing.value.id } })
+    router.push({ path: '/orders/checkout', query: { saleCardId: listing.value.id } })
   }
 }
 
@@ -217,7 +217,7 @@ const addComment = () => {
   padding: 6px 10px;
   border-radius: 12px;
   background: #222;
-  color: white;
+  color: var(--color-primary-text);
   font-weight: 800;
 }
 
@@ -387,7 +387,7 @@ const addComment = () => {
 .primary-button {
   border: 0;
   background: #19b6b8;
-  color: white;
+  color: var(--color-primary-text);
 }
 
 @media (max-width: 960px) {

@@ -13,11 +13,13 @@ const saveMessage = ref('');
 const authStore = useAuthStore();
 const router = useRouter();
 
-const mockListings = computed(() => profile.value?.listings || []);
+const mockListings = computed(() => profile.value?.saleCards || []);
 
-// 편집 중인 폼 데이터 (닉네임만 수정 가능)
+// 편집 중인 폼 데이터
 const editForm = reactive({
   nickname: '',
+  storeName: '',
+  intro: ''
 });
 
 // 프로필 이미지
@@ -45,14 +47,17 @@ const listingStatusLabel = (status) => {
 };
 
 const formatPrice = (price) => `${price.toLocaleString('ko-KR')}원`;
-const goListingEdit = (listingId) => {
-  router.push(`/listings/${listingId}/edit`);
+const goSaleCardEdit = (saleCardId) => {
+  router.push(`/saleCards/${saleCardId}/edit`);
 };
 const goAddressBook = () => {
   router.push('/addresses');
 };
 const goOrders = () => {
   router.push('/orders');
+};
+const goAccountVerify = () => {
+  router.push('/mypage/account/verify');
 };
 
 const fetchProfile = async () => {
@@ -79,6 +84,8 @@ const fetchProfile = async () => {
 
 const startEdit = () => {
   editForm.nickname = profile.value.nickname || '';
+  editForm.storeName = profile.value.store?.storeName || '';
+  editForm.intro = profile.value.store?.intro || '';
   newImagePreview.value = null;
   errorMessage.value = '';
   isEditing.value = true;
@@ -108,6 +115,16 @@ const saveEdit = async () => {
       nickname: editForm.nickname,
     });
 
+    try {
+      // 상점 정보 저장
+      await apiClient.patch('/stores/me', {
+        storeName: editForm.storeName || profile.value.store?.storeName || editForm.nickname + '님의 상점',
+        intro: editForm.intro,
+      });
+    } catch(e) {
+      console.warn('상점 정보가 아직 백엔드에 초기화되지 않았거나 서버 통신에 실패했습니다.', e);
+    }
+
     // 이미지가 변경된 경우 별도 저장
     if (newImagePreview.value) {
       await apiClient.patch('/member/me/profile-image', {
@@ -116,8 +133,12 @@ const saveEdit = async () => {
       profile.value.profileImageUrl = newImagePreview.value;
     }
 
-    // 로컬 profile 객체 업데이트
+    // 로컬 profile 업데이트
     profile.value.nickname = editForm.nickname;
+    if (profile.value.store) {
+      profile.value.store.storeName = editForm.storeName || profile.value.store.storeName;
+      profile.value.store.intro = editForm.intro;
+    }
 
     saveMessage.value = '프로필이 성공적으로 수정되었습니다.';
     isEditing.value = false;
@@ -156,12 +177,50 @@ onMounted(() => {
 
 <template>
   <div class="mypage-container container">
-    <h1 class="page-title">내 상점 관리</h1>
-
     <div v-if="isLoading" class="loading">프로필 불러오는 중...</div>
     <div v-else-if="errorMessage && !profile" class="error">{{ errorMessage }}</div>
 
     <div v-else-if="profile" class="profile-layout">
+      <section class="profile-card">
+        <div class="section-header compact">
+          <div>
+            <strong>계정 정보</strong>
+            <p>내 상점 운영에 필요한 기본 계정 정보입니다.</p>
+          </div>
+          <div class="profile-tools">
+            <button type="button" class="icon-box" title="계정 정보 수정" @click="goAccountVerify">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21a8 8 0 0 0-16 0"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </button>
+            <button type="button" class="btn-edit" @click="goAddressBook">배송지 관리</button>
+          </div>
+        </div>
+        <div class="profile-details">
+          <div class="detail-group">
+            <span class="label">이메일</span>
+            <span class="value">{{ profile.email }}</span>
+          </div>
+          <div class="detail-group">
+            <span class="label">이름</span>
+            <span class="value">{{ profile.name }}</span>
+          </div>
+          <div class="detail-group">
+            <span class="label">휴대폰 번호</span>
+            <span class="value">{{ profile.phoneNumber }}</span>
+          </div>
+          <div class="detail-group">
+            <span class="label">생년월일</span>
+            <span class="value">{{ profile.birthDate }}</span>
+          </div>
+          <div class="detail-group">
+            <span class="label">성별</span>
+            <span class="value">{{ genderLabel(profile.gender) }}</span>
+          </div>
+        </div>
+      </section>
+
       <section class="store-hero">
         <div class="avatar-wrapper">
           <div class="avatar" :class="{ editable: isEditing }" @click="isEditing && imageInput.click()">
@@ -184,24 +243,45 @@ onMounted(() => {
           <input ref="imageInput" type="file" accept="image/*" style="display:none" @change="handleImageChange" />
           <span v-if="isEditing" class="avatar-hint">클릭하여 변경</span>
         </div>
-        <div class="store-hero-body">
-          <div class="store-hero-head">
-            <div>
-              <p class="store-label">MY STORE</p>
-              <h2>{{ profile.store.storeName }}</h2>
-              <p class="store-owner">{{ isEditing ? editForm.nickname || profile.nickname : profile.nickname }}</p>
+          <div class="store-hero-body">
+            <div class="store-hero-head">
+              <div>
+                <p class="store-label">MY STORE</p>
+                <template v-if="isEditing">
+                  <div class="hero-inline-fields">
+                    <div class="form-group">
+                      <label>상점 이름</label>
+                      <input type="text" v-model="editForm.storeName" placeholder="상점 이름" />
+                    </div>
+                    <div class="form-group">
+                      <label>닉네임 <span class="required">*</span></label>
+                      <input type="text" v-model="editForm.nickname" placeholder="닉네임" />
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <h2>{{ profile.store.storeName }}</h2>
+                  <p class="store-owner">{{ profile.nickname }}</p>
+                </template>
+              </div>
+              <div class="hero-actions">
+                <button v-if="!isEditing" class="btn-edit hero-edit-button" @click="startEdit">상점 수정</button>
+              <div v-else class="hero-edit-actions">
+                <button class="btn-save" :disabled="isSaving" @click="saveEdit">
+                  {{ isSaving ? '저장 중...' : '저장' }}
+                </button>
+                <button class="btn-cancel" :disabled="isSaving" @click="cancelEdit">취소</button>
+                </div>
+              </div>
             </div>
-            <div class="badges">
-              <span class="role-badge">{{ profile.role }}</span>
-              <span class="status-badge" :class="profile.status?.toLowerCase()">
-                {{ statusLabel(profile.status) }}
-              </span>
+            <div v-if="isEditing" class="form-group">
+              <label>상점 소개글</label>
+              <textarea v-model="editForm.intro" placeholder="상점 소개를 짧게 입력해주세요." rows="3" class="form-textarea"></textarea>
             </div>
-          </div>
-          <p class="store-intro">{{ profile.store.intro }}</p>
-          <div class="store-summary">
-            <article>
-              <span>평균 평점</span>
+            <p v-else class="store-intro">{{ profile.store.intro }}</p>
+            <div class="store-summary">
+              <article>
+                <span>평균 평점</span>
               <strong>{{ profile.store.ratingAvg }}</strong>
             </article>
             <article>
@@ -214,9 +294,9 @@ onMounted(() => {
             </article>
             <article>
               <span>등록 상품</span>
-              <strong>{{ mockListings.length }}</strong>
-            </article>
-          </div>
+                <strong>{{ mockListings.length }}</strong>
+              </article>
+            </div>
         </div>
       </section>
 
@@ -229,7 +309,7 @@ onMounted(() => {
             <strong>내 상점 관리</strong>
             <p>불필요한 지표 없이 현재 출품 상품과 상태만 빠르게 관리합니다.</p>
           </div>
-          <button v-if="!isEditing" class="btn-edit" @click="startEdit">상점 정보 수정</button>
+          <button class="btn-edit" @click="goOrders">내 거래 내역</button>
         </div>
 
         <div class="listing-table">
@@ -258,95 +338,10 @@ onMounted(() => {
             <div class="listing-price">{{ formatPrice(listing.price) }}</div>
             <div class="listing-date">{{ listing.updatedAt }}</div>
             <div class="listing-actions">
-              <button type="button" @click="goListingEdit(listing.id)">수정</button>
+              <button type="button" @click="goSaleCardEdit(listing.id)">수정</button>
               <button type="button">{{ listing.status === 'ACTIVE' ? '숨김' : '재등록' }}</button>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section v-if="!isEditing" class="profile-card">
-        <div class="section-header compact">
-          <div>
-            <strong>계정 정보</strong>
-            <p>내 상점 운영에 필요한 기본 계정 정보입니다.</p>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn-edit" @click="goOrders">내 거래 관리</button>
-            <button type="button" class="btn-edit" @click="goAddressBook">배송지 관리</button>
-          </div>
-        </div>
-        <div class="profile-details">
-        <div class="detail-group">
-          <span class="label">이메일</span>
-          <span class="value">{{ profile.email }}</span>
-        </div>
-        <div class="detail-group">
-          <span class="label">이름</span>
-          <span class="value">{{ profile.name }}</span>
-        </div>
-        <div class="detail-group">
-          <span class="label">휴대폰 번호</span>
-          <span class="value">{{ profile.phoneNumber }}</span>
-        </div>
-        <div class="detail-group">
-          <span class="label">생년월일</span>
-          <span class="value">{{ profile.birthDate }}</span>
-        </div>
-        <div class="detail-group">
-          <span class="label">성별</span>
-          <span class="value">{{ genderLabel(profile.gender) }}</span>
-        </div>
-        </div>
-      </section>
-
-      <section v-else class="profile-card">
-        <div class="section-header compact">
-          <div>
-            <strong>상점 정보 수정</strong>
-            <p>닉네임과 프로필 이미지를 수정하면 내 상점 화면에 즉시 반영됩니다.</p>
-          </div>
-        </div>
-        <div class="edit-form">
-
-        <div class="edit-section-title">변경 가능 항목</div>
-        <div class="form-group">
-          <label>닉네임 <span class="required">*</span></label>
-          <input type="text" v-model="editForm.nickname" placeholder="닉네임" />
-          <span class="form-hint">다른 사용자에게 공개되는 이름입니다.</span>
-        </div>
-
-        <!-- 변경 불가 항목 -->
-        <div class="edit-section-title locked-title">🔒 변경 불가 항목 <span class="locked-reason">(본인인증 연동 필요)</span></div>
-        <div class="locked-fields">
-          <div class="locked-item">
-            <span class="locked-label">이메일</span>
-            <span class="locked-value">{{ profile.email }}</span>
-          </div>
-          <div class="locked-item">
-            <span class="locked-label">이름</span>
-            <span class="locked-value">{{ profile.name }}</span>
-          </div>
-          <div class="locked-item">
-            <span class="locked-label">휴대폰 번호</span>
-            <span class="locked-value">{{ profile.phoneNumber }}</span>
-          </div>
-          <div class="locked-item">
-            <span class="locked-label">생년월일</span>
-            <span class="locked-value">{{ profile.birthDate }}</span>
-          </div>
-          <div class="locked-item">
-            <span class="locked-label">성별</span>
-            <span class="locked-value">{{ genderLabel(profile.gender) }}</span>
-          </div>
-        </div>
-        </div>
-
-        <div class="card-actions">
-          <button class="btn-save" :disabled="isSaving" @click="saveEdit">
-            {{ isSaving ? '저장 중...' : '✓ 저장' }}
-          </button>
-          <button class="btn-cancel" :disabled="isSaving" @click="cancelEdit">× 취소</button>
         </div>
       </section>
     </div>
@@ -360,13 +355,6 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-.page-title {
-  font-size: 28px;
-  font-weight: 800;
-  margin-bottom: 28px;
-  letter-spacing: -0.04em;
-}
-
 .profile-layout {
   display: grid;
   gap: 24px;
@@ -375,7 +363,7 @@ onMounted(() => {
 .store-hero,
 .profile-card,
 .management-section {
-  background: white;
+  background: var(--color-panel);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 28px;
@@ -401,7 +389,7 @@ onMounted(() => {
   height: 88px;
   border-radius: 50%;
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-primary-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -445,6 +433,17 @@ onMounted(() => {
   gap: 16px;
 }
 
+.hero-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.hero-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .store-hero-head {
   display: flex;
   justify-content: space-between;
@@ -465,6 +464,12 @@ onMounted(() => {
   font-size: 26px;
 }
 
+.hero-inline-fields {
+  display: grid;
+  gap: 14px;
+  min-width: min(100%, 420px);
+}
+
 .store-owner,
 .store-intro {
   color: var(--color-text-light);
@@ -479,7 +484,7 @@ onMounted(() => {
 .store-summary article {
   padding: 16px;
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--color-background-elevated);
   border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
@@ -494,23 +499,6 @@ onMounted(() => {
 .store-summary strong {
   font-size: 18px;
 }
-
-.badges { display: flex; gap: 8px; flex-wrap: wrap; }
-
-.role-badge {
-  background: #f1f5f9; color: #475569;
-  padding: 4px 12px; border-radius: 20px;
-  font-size: 12px; font-weight: 600;
-}
-
-.status-badge {
-  padding: 4px 12px; border-radius: 20px;
-  font-size: 12px; font-weight: 600;
-}
-.status-badge.active    { background: #d1fae5; color: #065f46; }
-.status-badge.suspended { background: #fee2e2; color: #991b1b; }
-.status-badge.withdrawn { background: #f3f4f6; color: #6b7280; }
-
 /* ── 메시지 ── */
 .save-message {
   background: #f0fff4; border: 1px solid #c6f6d5;
@@ -548,6 +536,24 @@ onMounted(() => {
   color: var(--color-text-light);
 }
 
+.profile-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-box {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  background: white;
+  border-radius: 10px;
+  color: #475569;
+}
+
 .listing-table {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -564,7 +570,7 @@ onMounted(() => {
 }
 
 .listing-table-head {
-  background: #f8fafc;
+  background: var(--color-background-elevated);
   font-size: 12px;
   font-weight: 700;
   color: var(--color-text-light);
@@ -624,7 +630,7 @@ onMounted(() => {
 .listing-actions button {
   padding: 9px 12px;
   border: 1px solid var(--color-border);
-  background: white;
+  background: var(--color-panel);
   border-radius: 8px;
   font-family: inherit;
   font-size: 13px;
@@ -633,7 +639,7 @@ onMounted(() => {
 }
 
 .listing-actions button:hover {
-  background: #f8fafc;
+  background: var(--color-background-elevated);
 }
 
 /* ── 조회 모드 ── */
@@ -654,14 +660,6 @@ onMounted(() => {
 
 .value { font-size: 15px; color: var(--color-text); font-weight: 500; }
 
-/* ── 편집 모드 ── */
-.edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  margin-bottom: 32px;
-}
-
 .form-group label {
   display: block; font-size: 13px;
   font-weight: 600; margin-bottom: 7px;
@@ -670,16 +668,18 @@ onMounted(() => {
 
 .form-group input[type="text"],
 .form-group input[type="tel"],
-.form-group input[type="date"] {
+.form-group input[type="date"],
+.form-textarea {
   width: 100%; padding: 11px 14px;
   font-family: inherit; font-size: 14px;
   border: 1px solid var(--color-border);
   border-radius: 6px; outline: none;
   transition: border-color 0.2s;
   box-sizing: border-box;
-  background: white; color: var(--color-text);
+  background: var(--color-panel); color: var(--color-text);
 }
-.form-group input:focus { border-color: var(--color-primary); }
+.form-textarea { resize: vertical; }
+.form-group input:focus, .form-textarea:focus { border-color: var(--color-primary); }
 
 .gender-group { display: flex; gap: 10px; }
 
@@ -696,86 +696,36 @@ onMounted(() => {
 .gender-item.active {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: white; font-weight: 700;
+  color: var(--color-primary-text); font-weight: 700;
 }
 
 .readonly-group {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 14px;
-  background: #f8fafc; border-radius: 6px;
+  background: var(--color-background-elevated); border-radius: 6px;
   border: 1px solid #e2e8f0;
 }
 
 .readonly-group label { margin-bottom: 0; min-width: 60px; }
 
-.readonly-value { font-size: 14px; color: #475569; flex: 1; }
+.readonly-value { font-size: 14px; color: var(--color-text-strong); flex: 1; }
 
 .readonly-badge {
   font-size: 11px; background: #e2e8f0;
-  color: #64748b; padding: 2px 8px;
+  color: var(--color-text-subtle); padding: 2px 8px;
   border-radius: 10px; font-weight: 600;
 }
 
 .required { color: #e53e3e; }
-
-/* ── 편집 섹션 제목 ── */
-.edit-section-title {
-  font-size: 12px; font-weight: 700;
-  color: var(--color-text-light);
-  text-transform: uppercase; letter-spacing: 0.6px;
-  margin-top: 4px; margin-bottom: -4px;
-}
-
-.locked-title { color: #94a3b8; }
-.locked-reason { font-weight: 400; font-size: 11px; text-transform: none; letter-spacing: 0; }
-
-/* ── 변경 불가 필드 그룹 ── */
-.locked-fields {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 4px 0;
-  margin-bottom: 4px;
-}
-
-.locked-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  border-bottom: 1px solid #f1f5f9;
-}
-.locked-item:last-child { border-bottom: none; }
-
-.locked-label {
-  font-size: 12px; font-weight: 600;
-  color: #94a3b8;
-  min-width: 90px;
-}
-
-.locked-value {
-  font-size: 14px; color: #475569;
-  font-weight: 500;
-}
-
 .form-hint {
   display: block; font-size: 12px;
   margin-top: 5px; color: var(--color-text-light);
 }
 
-/* ── 하단 버튼 ── */
-.card-actions {
-  border-top: 1px solid var(--color-border);
-  padding-top: 24px;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
 .btn-edit {
   padding: 10px 18px;
   background: var(--color-primary);
-  color: white; border: none;
+  color: var(--color-primary-text); border: none;
   border-radius: 8px; font-size: 14px;
   font-weight: 600; cursor: pointer;
   transition: opacity 0.15s;
@@ -786,7 +736,7 @@ onMounted(() => {
 .btn-save {
   padding: 10px 24px;
   background: var(--color-primary);
-  color: white; border: none;
+  color: var(--color-primary-text); border: none;
   border-radius: 7px; font-size: 14px;
   font-weight: 600; cursor: pointer;
   transition: opacity 0.15s; font-family: inherit;
@@ -796,13 +746,13 @@ onMounted(() => {
 
 .btn-cancel {
   padding: 10px 20px;
-  background: white; color: #475569;
+  background: var(--color-panel); color: var(--color-text-strong);
   border: 1px solid var(--color-border);
   border-radius: 7px; font-size: 14px;
   font-weight: 600; cursor: pointer;
   transition: background 0.15s; font-family: inherit;
 }
-.btn-cancel:hover:not(:disabled) { background: #f1f5f9; }
+.btn-cancel:hover:not(:disabled) { background: var(--color-panel-soft); }
 .btn-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .loading, .error {
@@ -834,12 +784,13 @@ onMounted(() => {
   .listing-actions {
     justify-content: flex-start;
   }
+
 }
 
 @media (max-width: 600px) {
   .profile-details { grid-template-columns: 1fr; }
-  .badges { justify-content: center; }
-  .card-actions { justify-content: stretch; }
+  .profile-tools,
+  .hero-edit-actions { width: 100%; }
   .btn-edit, .btn-save, .btn-cancel { flex: 1; }
 }
 </style>

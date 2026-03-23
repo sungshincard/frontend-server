@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { latestListings, recentTrades, risingCards } from '../data/catalog'
+import { latestSaleCards, recentTrades, risingCards } from '../data/catalog'
 
 const router = useRouter()
 
@@ -21,9 +21,9 @@ const slides = [
 const currentSlide = ref(0)
 
 const collections = [
-  { title: '새로 출품된 카드', items: latestListings },
+  { title: '새로 출품된 카드', items: latestSaleCards },
   { title: '새로 출시된 카드', items: recentTrades },
-  { title: '현재 시세보다 저렴한 카드', items: latestListings.slice().reverse() },
+  { title: '현재 시세보다 저렴한 카드', items: latestSaleCards.slice().reverse() },
 ]
 
 const spotlightItems = computed(() =>
@@ -209,7 +209,7 @@ const activeSlide = computed(() => slides[currentSlide.value])
 
 .visual-card {
   position: absolute;
-  background: #f0f0f0;
+  background: var(--color-background-elevated);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-soft);
 }
@@ -224,7 +224,7 @@ const activeSlide = computed(() => slides[currentSlide.value])
   top: 40px; right: 0; width: 30%; height: 75%;
 }
 .visual-card.shoes {
-  bottom: 0; left: 30%; width: 40%; height: 30%; background: #ffffff;
+  bottom: 0; left: 30%; width: 40%; height: 30%; background: var(--color-panel);
 }
 
 .slider-arrow {
@@ -311,7 +311,7 @@ const activeSlide = computed(() => slides[currentSlide.value])
 
 .spotlight-art,
 .product-art {
-  background: #f5f5f5;
+  background: var(--color-background-elevated);
   border: 1px solid var(--color-border);
 }
 

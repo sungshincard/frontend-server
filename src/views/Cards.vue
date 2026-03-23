@@ -148,7 +148,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
             <p class="set-name">{{ card.setName }} · {{ card.rarity }}</p>
             <div class="price-row">
               <strong>{{ card.lowestPrice }}</strong>
-              <span>출품 {{ card.listingCount }}개</span>
+              <span>출품 {{ card.saleCardCount }}개</span>
             </div>
           </div>
         </article>
@@ -377,7 +377,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 .card-shell {
   width: min(100%, 180px);
   aspect-ratio: 0.71;
-  background: #f0f0f0;
+  background: var(--color-background-elevated);
   border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
@@ -395,7 +395,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 
 .art-spot {
   flex: 1;
-  background: #ffffff;
+  background: var(--color-panel);
   margin: 8px 0;
   border: 1px solid var(--color-border);
 }

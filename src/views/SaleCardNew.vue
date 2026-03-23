@@ -1,13 +1,13 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCardById, getListingById } from '../data/catalog'
+import { getCardById, getSaleCardById } from '../data/catalog'
 
 const route = useRoute()
 const router = useRouter()
 
-const listingId = computed(() => route.params.listingId || '')
-const editingListing = computed(() => (listingId.value ? getListingById(listingId.value) : null))
+const saleCardId = computed(() => route.params.saleCardId || '')
+const editingListing = computed(() => (saleCardId.value ? getSaleCardById(saleCardId.value) : null))
 const cardId = computed(() => editingListing.value?.cardId || route.query.cardId || 'charizard-ex-sar-151')
 const card = computed(() => editingListing.value?.card || getCardById(cardId.value))
 
@@ -474,7 +474,7 @@ const goBack = () => {
 .submit-button {
   background: #d93a2f;
   border-color: transparent;
-  color: white;
+  color: var(--color-primary-text);
 }
 
 @media (max-width: 720px) {

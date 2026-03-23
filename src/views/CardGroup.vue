@@ -63,7 +63,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
           <p>{{ card.setName }}</p>
           <div class="version-meta">
             <span>최저가 {{ card.lowestPrice }}</span>
-            <span>출품 {{ card.listingCount }}개</span>
+            <span>출품 {{ card.saleCardCount }}개</span>
           </div>
         </div>
       </article>
@@ -183,7 +183,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   width: 100%;
   aspect-ratio: 0.71;
   padding: 12px;
-  background: #ffffff;
+  background: var(--color-panel);
   border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
@@ -202,7 +202,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 .focus-art {
   flex: 1;
   margin: 10px 0;
-  background: #f0f0f0;
+  background: var(--color-background-elevated);
   border: 1px solid var(--color-border);
 }
 
