@@ -1,7 +1,9 @@
 <script setup>
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import authService from '../services/authService';
+import { toast } from 'vue3-toastify';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -20,22 +22,29 @@ const form = reactive({
   gender: profile.value?.gender || 'NONE',
 });
 
-const saveAccount = () => {
-  authStore.setUser({
-    ...authStore.user,
-    nickname: form.nickname,
-    name: form.name,
-    phoneNumber: form.phoneNumber,
-    birthDate: form.birthDate,
-    gender: form.gender,
-    store: {
-      ...authStore.user.store,
-      storeName: authStore.user.store?.storeName || form.nickname,
-    },
-  });
+const isLoading = ref(false);
 
-  sessionStorage.removeItem('account-edit-verified');
-  router.push('/mypage');
+const saveAccount = async () => {
+  try {
+    isLoading.value = true;
+    const response = await authService.updateProfile({
+      nickname: form.nickname,
+      name: form.name,
+      phoneNumber: form.phoneNumber,
+      birthDate: form.birthDate,
+      gender: form.gender,
+    });
+
+    authStore.setUser(response.data);
+    toast.success('계정 정보가 성공적으로 수정되었습니다.');
+    
+    sessionStorage.removeItem('account-edit-verified');
+    router.push('/mypage');
+  } catch (error) {
+    console.error('Failed to update profile:', error);
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -80,8 +89,10 @@ const saveAccount = () => {
       </div>
 
       <div class="actions">
-        <button type="button" class="secondary-button" @click="router.push('/mypage')">취소</button>
-        <button type="button" class="primary-button" @click="saveAccount">저장</button>
+        <button type="button" class="secondary-button" :disabled="isLoading" @click="router.push('/mypage')">취소</button>
+        <button type="button" class="primary-button" :disabled="isLoading" @click="saveAccount">
+          {{ isLoading ? '처리 중...' : '저장' }}
+        </button>
       </div>
     </section>
   </div>

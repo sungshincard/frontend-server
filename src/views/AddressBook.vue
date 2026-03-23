@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import apiClient from '../services/api' 
+import authService from '../services/authService'
 
 const addresses = ref([])
 const showModal = ref(false)
@@ -18,10 +18,10 @@ const form = ref({
 
 const fetchAddresses = async () => {
   try {
-    const res = await apiClient.get('/member/addresses')
+    const res = await authService.getAddresses()
     addresses.value = res.data
   } catch (error) {
-    alert('배송지 목록을 불러오지 못했습니다.')
+    console.error('Failed to fetch addresses:', error)
   }
 }
 
@@ -56,10 +56,10 @@ const openEditModal = (address) => {
 const saveAddress = async () => {
   try {
     if (isEditing.value) {
-      await apiClient.put(`/member/addresses/${editingId.value}`, form.value)
+      await authService.updateAddress(editingId.value, form.value)
       alert('배송지가 수정되었습니다.')
     } else {
-      await apiClient.post('/member/addresses', form.value)
+      await authService.addAddress(form.value)
       alert('배송지가 추가되었습니다.')
     }
     showModal.value = false
@@ -72,7 +72,7 @@ const saveAddress = async () => {
 const deleteAddress = async (id) => {
   if (!confirm('정말 삭제하시겠습니까?')) return
   try {
-    await apiClient.delete(`/member/addresses/${id}`)
+    await authService.deleteAddress(id)
     alert('배송지가 삭제되었습니다.')
     fetchAddresses()
   } catch (error) {
@@ -82,7 +82,7 @@ const deleteAddress = async (id) => {
 
 const setDefault = async (id) => {
   try {
-    await apiClient.patch(`/member/addresses/${id}/default`)
+    await authService.setDefaultAddress(id)
     fetchAddresses()
   } catch (error) {
     alert('기본 배송지 설정 중 오류가 발생했습니다.')

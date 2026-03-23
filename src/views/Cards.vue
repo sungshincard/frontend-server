@@ -1,36 +1,145 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cards } from '../data/catalog'
+import productService from '../services/productService'
 
 const router = useRouter()
 const route = useRoute()
 
-const categoryTabs = ['포켓몬', '트레이너스', '에너지']
-const sortOptions = ['최신순', '인기순', '최저가순', '최근 거래순']
-const typeFilters = ['불꽃', '물', '풀', '전기', '에스퍼', '악', '드래곤']
-const stageFilters = ['기본', '1진화', '2진화', '포켓몬 ex', '아이템', '서포트']
+const categoryTabs = ref(['전체', '포켓몬', '에너지', '트레이너스'])
+const sortOptions = ref(['최신순', '인기순', '최저가순', '최근 거래순'])
+
+const filterGroups = computed(() => {
+  const groups = []
+
+  if (activeCategory.value === '포켓몬') {
+    groups.push({
+      key: 'type',
+      label: '타입',
+      chips: metadata.value.elementalTypes.map(t => t.id)
+    })
+    groups.push({
+      key: 'evolutionStage',
+      label: '진화 단계',
+      chips: ['기본', '1진화', '2진화', 'V', 'VMAX', 'VSTAR', 'ex', '메가 ex', '라디언트']
+    })
+  } else if (activeCategory.value === '에너지') {
+    const energyCats = metadata.value.categories.filter(c => c.name.includes('ENERGY') && c.name !== 'ENERGY')
+    groups.push({
+      key: 'subType',
+      label: '종류',
+      chips: energyCats.map(c => c.id)
+    })
+    groups.push({
+      key: 'type',
+      label: '타입',
+      chips: metadata.value.elementalTypes.map(t => t.id)
+    })
+  } else if (activeCategory.value === '트레이너스') {
+    const trainerCats = metadata.value.categories.filter(c => !c.name.includes('ENERGY') && c.name !== 'POKEMON' && c.name !== 'ENERGY' && c.name !== 'TRAINER')
+    groups.push({
+      key: 'subType',
+      label: '종류',
+      chips: trainerCats.map(c => c.id)
+    })
+  }
+
+  return groups
+})
+
+const getFilterLabel = (key, value) => {
+  if (key === 'type') {
+    return metadata.value.elementalTypes.find(t => t.id.toString() === value.toString())?.displayName || value
+  }
+  if (key === 'subType') {
+    return metadata.value.categories.find(c => c.id.toString() === value.toString())?.displayName || value
+  }
+  return value
+}
 
 const activeCategory = ref('포켓몬')
 const activeSort = ref('최신순')
-const selectedPokemon = ref('')
 const isFilterOpen = ref(false)
 
-watch(
-  () => route.query,
-  (query) => {
-    activeCategory.value = query.category || '포켓몬'
-    selectedPokemon.value = query.pokemon || ''
-  },
-  { immediate: true }
-)
+const activeFilters = ref({
+  type: '',
+  evolutionStage: '',
+  subType: ''
+})
 
-const visibleCards = computed(() =>
-  cards.filter((card) => {
-    const categoryMatch = activeCategory.value === '포켓몬' ? card.category === '포켓몬' : card.category === activeCategory.value
-    return categoryMatch
-  })
-)
+const toggleFilter = (key, value) => {
+  if (activeFilters.value[key] === value) {
+    activeFilters.value[key] = ''
+  } else {
+    activeFilters.value[key] = value
+  }
+  fetchCards()
+}
+
+const metadata = ref({
+  categories: [],
+  elementalTypes: [],
+  cardSets: []
+})
+
+const fetchMetadata = async () => {
+  try {
+    const response = await productService.getMetadata('POKEMON')
+    metadata.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch metadata:', error)
+  }
+}
+
+const cards = ref([])
+const isLoading = ref(false)
+
+const searchParams = ref({
+  cardSetId: null,
+  cardName: '',
+  cardNumber: '',
+})
+
+const fetchCards = async () => {
+  try {
+    isLoading.value = true
+    const params = {
+      gameType: 'POKEMON',
+      categoryId: activeFilters.value.subType || (activeCategory.value === '트레이너스' ? 3 : (activeCategory.value === '에너지' ? 2 : null)),
+      cardSetId: searchParams.value.cardSetId,
+      cardName: searchParams.value.cardName,
+      cardNumber: searchParams.value.cardNumber,
+      elementalTypeId: activeFilters.value.type,
+      evolutionStage: activeFilters.value.evolutionStage,
+    }
+    const response = await productService.searchCards(params)
+    cards.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch cards:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchMetadata();
+  fetchCards();
+});
+
+watch([activeCategory], () => {
+  // Reset filters when category changes
+  activeFilters.value = { type: '', evolutionStage: '', subType: '' }
+  fetchCards()
+})
+
+const handleCategoryChange = (tab) => {
+  activeCategory.value = tab
+  if (tab !== '전체') {
+    isFilterOpen.value = true
+  }
+}
+
+const visibleCards = computed(() => cards.value)
 
 const goCard = (cardId) => router.push(`/cards/${cardId}`)
 </script>
@@ -40,12 +149,11 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
     <section class="cards-hero">
       <div>
         <h1>카드 탐색</h1>
-        <p v-if="selectedPokemon" class="filtered-copy">{{ selectedPokemon }} 기준으로 자동 필터링되었습니다.</p>
       </div>
 
       <div class="search-shell">
-        <input type="text" placeholder="포켓몬 이름, 카드명, 카드번호를 검색하세요" aria-label="포켓몬 이름 또는 카드명 검색">
-        <button type="button" class="search-button">검색</button>
+        <input v-model="searchParams.cardName" type="text" placeholder="포켓몬 이름, 카드명, 카드번호를 검색하세요" aria-label="포켓몬 이름 또는 카드명 검색" @keyup.enter="fetchCards">
+        <button type="button" class="search-button" @click="fetchCards">검색</button>
       </div>
     </section>
 
@@ -58,34 +166,29 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
             type="button"
             class="tab-chip"
             :class="{ active: activeCategory === tab }"
-            @click="activeCategory = tab"
+            @click="handleCategoryChange(tab)"
           >
             {{ tab }}
           </button>
         </div>
-        <button
-          type="button"
-          class="filter-toggle-button"
-          :class="{ active: isFilterOpen }"
-          @click="isFilterOpen = !isFilterOpen"
-        >
-          필터 적용
-        </button>
       </div>
 
-      <div v-if="isFilterOpen" class="filter-dropdown">
+      <div v-if="activeCategory !== '전체'" class="filter-dropdown">
         <div class="filter-grid">
           <div class="field-block">
             <label>카드명</label>
-            <input type="text" placeholder="피카츄, 리자몽, 뮤" aria-label="카드명">
+            <input v-model="searchParams.cardName" type="text" placeholder="피카츄, 리자몽, 뮤" aria-label="카드명">
           </div>
           <div class="field-block">
-            <label>세트명</label>
-            <input type="text" placeholder="151, 흑염의 지배자" aria-label="세트명">
+            <label>확장팩</label>
+            <select v-model="searchParams.cardSetId" @change="fetchCards">
+              <option :value="null">전체 확장팩</option>
+              <option v-for="set in metadata.cardSets" :key="set.id" :value="set.id">{{ set.name }}</option>
+            </select>
           </div>
           <div class="field-block">
             <label>카드번호</label>
-            <input type="text" placeholder="025/165" aria-label="카드번호">
+            <input v-model="searchParams.cardNumber" type="text" placeholder="025/165" aria-label="카드번호">
           </div>
           <div class="field-block">
             <label>정렬 옵션</label>
@@ -95,17 +198,19 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
           </div>
         </div>
 
-        <div class="chip-section">
-          <h2>카드 타입</h2>
+        <div v-for="group in filterGroups" :key="group.label" class="chip-section">
+          <h2>{{ group.label }}</h2>
           <div class="chip-grid">
-            <button v-for="item in typeFilters" :key="item" type="button" class="filter-chip">{{ item }}</button>
-          </div>
-        </div>
-
-        <div class="chip-section">
-          <h2>카드 종류</h2>
-          <div class="chip-grid">
-            <button v-for="item in stageFilters" :key="item" type="button" class="filter-chip">{{ item }}</button>
+            <button
+              v-for="chip in group.chips"
+              :key="chip"
+              type="button"
+              class="filter-chip"
+              :class="{ active: activeFilters[group.key] === chip }"
+              @click="toggleFilter(group.key, chip)"
+            >
+              {{ getFilterLabel(group.key, chip) }}
+            </button>
           </div>
         </div>
       </div>
@@ -134,18 +239,18 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
               </div>
               <div class="art-spot"></div>
               <div class="card-shell-footer">
-                <span>{{ card.type }}</span>
+                <span>{{ card.elementalTypeName }}</span>
                 <span>{{ card.cardNumber }}</span>
               </div>
             </div>
           </div>
           <div class="card-meta">
             <div class="meta-top">
-              <span class="type-badge">{{ card.type }}</span>
+              <span class="type-badge">{{ card.elementalTypeName || card.categoryName }}</span>
               <span class="trend">{{ card.trend }}</span>
             </div>
-            <h3>{{ card.name }}</h3>
-            <p class="set-name">{{ card.setName }} · {{ card.rarity }}</p>
+            <h3>{{ card.cardName }}</h3>
+            <p class="set-name">{{ card.cardSetName }} · {{ card.rarity }}</p>
             <div class="price-row">
               <strong>{{ card.lowestPrice }}</strong>
               <span>출품 {{ card.saleCardCount }}개</span>
@@ -153,11 +258,34 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
           </div>
         </article>
       </div>
+      
+      <div class="load-more-container" v-if="visibleCards.length > 0">
+        <button type="button" class="load-more-btn" @click="() => {}">더보기 (무한 스크롤 모의)</button>
+      </div>
     </section>
   </div>
 </template>
 
 <style scoped>
+/* (Added Load More CSS) */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+.load-more-btn {
+  padding: 14px 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-strong);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.load-more-btn:hover {
+  background: var(--color-panel-soft);
+}
 .cards-page {
   padding: 40px 0 80px;
 }

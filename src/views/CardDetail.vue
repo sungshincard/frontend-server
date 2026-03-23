@@ -1,17 +1,36 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cardGroups, getCardById, getCardsByGroupId, getStoreByName } from '../data/catalog'
+import { cardGroups, getCardsByGroupId, getStoreByName } from '../data/catalog'
 import { useWatchlistStore } from '../stores/watchlist'
+import productService from '../services/productService'
 
 const route = useRoute()
 const router = useRouter()
 const watchlistStore = useWatchlistStore()
 const marketFilters = ['모든 상태', 'A', 'B', 'C', 'D', 'PSA10', 'PSA9', 'PSA8 이하', 'BGS10 BL', 'BGS10 G']
-const activeMarketFilter = ref('모든 상태')
-const showPurchaseOverlay = ref(false)
+const card = ref(null)
+const isLoading = ref(true)
 
-const card = computed(() => getCardById(route.params.cardId))
+const fetchCardDetail = async (id) => {
+  try {
+    isLoading.value = true
+    const response = await productService.getCardDetail(id)
+    card.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch card detail:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCardDetail(route.params.cardId)
+})
+
+watch(() => route.params.cardId, (newId) => {
+  if (newId) fetchCardDetail(newId)
+})
 
 const relatedCards = computed(() => {
   if (!card.value) return []
@@ -51,18 +70,21 @@ const gradingLabel = (listing) => {
 </script>
 
 <template>
-  <div v-if="card" class="detail-page container">
+  <div v-if="isLoading" class="loading-state container">
+    <p>데이터를 불러오는 중입니다...</p>
+  </div>
+  <div v-else-if="card" class="detail-page container">
     <section class="detail-hero mobile-shell">
       <div class="visual-column">
         <div class="main-visual artwork">
-          <div class="phone-card">
+          <div class="phone-card" :class="card.pokemonCardType?.toLowerCase()">
             <div class="phone-card-head">
-              <span>{{ card.name }}</span>
-              <small>{{ card.hp }}</small>
+              <span>{{ card.cardName }}</span>
+              <small v-if="card.pokemonCardType === 'POKEMON'">{{ card.hp }} HP</small>
             </div>
             <div class="phone-card-art"></div>
             <div class="phone-card-foot">
-              <span>{{ card.type }}</span>
+              <span>{{ card.pokemonCardType === 'POKEMON' ? (card.evolutionStage || '기본') : (card.subType || card.pokemonCardType) }}</span>
               <span>{{ card.cardNumber }}</span>
             </div>
           </div>
@@ -75,12 +97,17 @@ const gradingLabel = (listing) => {
         <p class="summary">{{ card.summary }}</p>
 
         <div class="spec-grid">
+          <div><span>종류</span><strong>{{ card.categoryName || '정보 없음' }}</strong></div>
+          <div v-if="card.elementalTypeName"><span>타입(속성)</span><strong>{{ card.elementalTypeName }}</strong></div>
+          <template v-if="card.pokemonCardType === 'POKEMON'">
+            <div><span>HP</span><strong>{{ card.hp }}</strong></div>
+            <div><span>진화 단계</span><strong>{{ card.evolutionStage }}</strong></div>
+          </template>
           <div><span>레어리티</span><strong>{{ card.rarity }}</strong></div>
           <div><span>언어</span><strong>{{ card.language }}</strong></div>
-          <div><span>타입</span><strong>{{ card.type }}</strong></div>
-          <div><span>HP</span><strong>{{ card.hp }}</strong></div>
-          <div><span>약점</span><strong>{{ card.weakness }}</strong></div>
-          <div><span>진화 단계</span><strong>{{ card.stage }}</strong></div>
+          <div><span>일러스트</span><strong>{{ card.illustrator }}</strong></div>
+          <div><span>확장팩 넘버</span><strong>{{ card.expansionCode }}</strong></div>
+          <div><span>블록</span><strong>{{ card.block }}</strong></div>
         </div>
 
         <div class="price-panel">
