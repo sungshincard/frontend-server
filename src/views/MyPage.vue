@@ -339,6 +339,26 @@ onMounted(() => {
           </div>
         </div>
       </section>
+
+      <!-- Admin Management Section (Visible only to ADMIN) -->
+      <section v-if="authStore.userRole === 'ADMIN'" class="admin-management-section">
+        <div class="section-header">
+          <div>
+            <strong>관리자 전용 대시보드</strong>
+            <p>플랫폼 마스터 데이터 및 운영 현황을 관리하는 관리자 전용 공간입니다.</p>
+          </div>
+        </div>
+        <div class="admin-menu-grid">
+          <router-link to="/admin" class="admin-menu-item">
+            <div class="admin-menu-icon" style="background: #1e293b; color: white;">🛡️</div>
+            <div class="admin-menu-info">
+              <span class="admin-menu-title">어드민 센터 바로가기</span>
+              <span class="admin-menu-desc">대시보드, 카드 도감 및 회원 관리 기능을 이용할 수 있습니다.</span>
+            </div>
+            <div class="admin-menu-arrow">→</div>
+          </router-link>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -780,6 +800,74 @@ onMounted(() => {
     justify-content: flex-start;
   }
 
+}
+
+/* --- Admin Management Section --- */
+.admin-management-section {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 28px;
+  margin-top: 24px;
+}
+
+.admin-menu-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.admin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.admin-menu-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-color: #1e293b;
+}
+
+.admin-menu-icon {
+  font-size: 24px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+}
+
+.admin-menu-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-menu-title {
+  font-weight: 800;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.admin-menu-desc {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.admin-menu-arrow {
+  color: #1e293b;
+  font-weight: 800;
+  font-size: 18px;
 }
 
 @media (max-width: 600px) {

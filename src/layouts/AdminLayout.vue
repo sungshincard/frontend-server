@@ -14,7 +14,7 @@ const handleLogout = () => {
 
 const menuItems = [
   { name: '대시보드', path: '/admin', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z' },
-  { name: '카드 도감 관리', path: '/admin/card-masters', icon: 'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5z M4 19.5A2.5 2.5 0 0 1 6.5 17H20' },
+  { name: '마스터 카드 등록', path: '/admin/card-masters', icon: 'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5z M4 19.5A2.5 2.5 0 0 1 6.5 17H20' },
   { name: '카드 추가 요청', path: '/admin/card-requests', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6' },
   { name: '회원 관리', path: '/admin/members', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
   { name: '주문/배송 관리', path: '/admin/orders', icon: 'M9 20a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M20 20a1 1 0 1 0 0 2 1 1 0 0 0 0-2z M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6' },

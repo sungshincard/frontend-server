@@ -232,9 +232,10 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
           @click="goCard(card.id)"
         >
           <div class="card-thumb artwork">
-            <div class="card-shell">
+            <img v-if="card.imageUrl" :src="card.imageUrl" :alt="card.cardName" class="card-image" />
+            <div v-else class="card-shell">
               <div class="card-shell-head">
-                <span>{{ card.name }}</span>
+                <span>{{ card.cardName }}</span>
                 <small>{{ card.hp }}</small>
               </div>
               <div class="art-spot"></div>
@@ -500,6 +501,17 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   justify-content: center;
   padding: 20px;
   border-bottom: 1px solid var(--color-border);
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform var(--transition-fast);
+}
+
+.card-tile:hover .card-image {
+  transform: scale(1.05);
 }
 
 .card-shell {

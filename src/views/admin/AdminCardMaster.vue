@@ -11,20 +11,22 @@ const searchQuery = ref('');
 
 // Metadata
 const sets = ref([]);
-const rarities = ref(['C', 'U', 'R', 'RR', 'RRR', 'SR', 'SAR', 'UR', 'AR', 'HR', 'CHR', 'CSR', 'PROMO']);
+const rarityOptions = ref([]);
+const attributeOptions = ref([]);
+const stageOptions = ref([]);
 
 const form = ref({
   pokemonId: null,
   name: '',
   cardNumber: '',
-  rarity: '',
+  rarityId: null,
   imageUrl: '',
   cardSetId: null,
   gameType: 'POKEMON',
   language: 'KOREAN',
-  attribute: '',
+  elementalTypeId: null,
   hp: null,
-  stage: '',
+  evolutionStageId: null,
   illustrator: '',
   block: '',
   expansion: ''
@@ -32,8 +34,13 @@ const form = ref({
 
 const fetchMetadata = async () => {
   try {
-    const res = await productService.getMetadata('POKEMON');
-    sets.value = res.data.cardSets || [];
+    const res = await productService.getMetadata(form.value.gameType);
+    // res.data.data (ApiResponse wrapped)
+    const metadata = res.data.data;
+    sets.value = metadata.cardSets || [];
+    rarityOptions.value = metadata.rarities || [];
+    attributeOptions.value = metadata.elementalTypes || [];
+    stageOptions.value = metadata.evolutionStages || [];
   } catch (error) {
     console.error('Failed to fetch metadata', error);
   }
@@ -47,7 +54,7 @@ const searchPokemon = async (query) => {
   isSearching.value = true;
   try {
     const res = await productService.getPokemons({ name: query });
-    pokemonList.value = res.data;
+    pokemonList.value = res.data.data || res.data; // Handle different wrapper styles
   } catch (error) {
     console.error('Pokemon search failed', error);
   } finally {
@@ -58,7 +65,7 @@ const searchPokemon = async (query) => {
 const selectPokemon = (p) => {
   form.value.pokemonId = p.id;
   form.value.name = p.name + ' ';
-  form.value.attribute = p.types?.[0] || '';
+  // Optional: auto-select attribute if present in p
   pokemonList.value = [];
   searchQuery.value = p.name;
 };
@@ -87,14 +94,14 @@ const resetForm = () => {
     pokemonId: null,
     name: '',
     cardNumber: '',
-    rarity: '',
+    rarityId: null,
     imageUrl: '',
     cardSetId: null,
     gameType: 'POKEMON',
     language: 'KOREAN',
-    attribute: '',
+    elementalTypeId: null,
     hp: null,
-    stage: '',
+    evolutionStageId: null,
     illustrator: '',
     block: '',
     expansion: ''
@@ -120,7 +127,7 @@ watch(searchQuery, (newVal) => {
   <div class="admin-card-master-page">
     <header class="content-header">
       <div class="header-titles">
-        <h1>카드 도감 마스터 등록</h1>
+        <h1>마스터 카드 등록</h1>
         <p>서비스 전체에서 공통으로 사용될 마스터 카드 데이터를 구축합니다.</p>
       </div>
       <div class="header-badges">
@@ -166,7 +173,7 @@ watch(searchQuery, (newVal) => {
                 <div class="input-group">
                   <label>게임 타입 <span class="req">*</span></label>
                   <select v-model="form.gameType">
-                    <option value="POKEMON">포켓몬 카드 게임</option>
+                    <option value="POKEMON">포켓몬</option>
                     <option value="YUGIOH">유희왕</option>
                     <option value="ONEPIECE">원피스</option>
                   </select>
@@ -204,9 +211,9 @@ watch(searchQuery, (newVal) => {
               </div>
               <div class="row-2">
                 <div class="input-group">
-                  <label>카드 세트 <span class="req">*</span></label>
+                  <label>확장팩 명 <span class="req">*</span></label>
                   <select v-model="form.cardSetId" required>
-                    <option :value="null" disabled>세트를 선택하세요</option>
+                    <option :value="null" disabled>확장팩을 선택하세요</option>
                     <option v-for="s in sets" :key="s.id" :value="s.id">{{ s.name }} ({{ s.code }})</option>
                   </select>
                 </div>
@@ -218,18 +225,24 @@ watch(searchQuery, (newVal) => {
               <div class="row-3">
                 <div class="input-group">
                   <label>레어리티</label>
-                  <select v-model="form.rarity">
-                    <option value="">N/A</option>
-                    <option v-for="r in rarities" :key="r" :value="r">{{ r }}</option>
+                  <select v-model="form.rarityId">
+                    <option :value="null">N/A</option>
+                    <option v-for="r in rarityOptions" :key="r.id" :value="r.id">{{ r.displayName }}</option>
                   </select>
                 </div>
                 <div class="input-group">
                   <label>속성/타입</label>
-                  <input type="text" v-model="form.attribute" placeholder="예: 불꽃" />
+                  <select v-model="form.elementalTypeId">
+                    <option :value="null">N/A</option>
+                    <option v-for="a in attributeOptions" :key="a.id" :value="a.id">{{ a.displayName }}</option>
+                  </select>
                 </div>
                 <div class="input-group">
-                  <label>HP</label>
-                  <input type="number" v-model="form.hp" placeholder="330" />
+                  <label>진화 단계</label>
+                  <select v-model="form.evolutionStageId">
+                    <option :value="null">N/A</option>
+                    <option v-for="e in stageOptions" :key="e.id" :value="e.id">{{ e.name }}</option>
+                  </select>
                 </div>
               </div>
               <div class="row-2">

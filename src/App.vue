@@ -1,12 +1,14 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from './stores/auth'
+import { useThemeStore } from './stores/themeStore'
 import { useRouter } from 'vue-router'
 import { notifications } from './data/catalog'
 
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
 const router = useRouter()
-const theme = ref('dark')
+
 const showNotifications = ref(false)
 
 const handleLogout = () => {
@@ -14,23 +16,14 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-const themeLabel = computed(() => (theme.value === 'dark' ? '라이트 모드' : '다크 모드'))
+const themeLabel = computed(() => (themeStore.theme === 'dark' ? '라이트 모드' : '다크 모드'))
 const unreadCount = computed(() => notifications.filter((item) => !item.read).length)
+const isAdminPage = computed(() => router.currentRoute.value.path.startsWith('/admin'))
 const userMetaLabel = computed(() => {
   if (!authStore.isAuthenticated) return ''
   if (authStore.userRole === 'ADMIN') return '관리자'
   return '내 상점 운영'
 })
-
-const applyTheme = (nextTheme) => {
-  theme.value = nextTheme
-  document.documentElement.setAttribute('data-theme', nextTheme)
-  localStorage.setItem('theme', nextTheme)
-}
-
-const toggleTheme = () => {
-  applyTheme(theme.value === 'dark' ? 'light' : 'dark')
-}
 
 const toggleNotifications = () => {
   showNotifications.value = !showNotifications.value
@@ -42,14 +35,13 @@ const goNotification = (href) => {
 }
 
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme') || 'dark'
-  applyTheme(savedTheme)
+  themeStore.initTheme()
 })
 </script>
 
 <template>
   <div class="app-layout">
-    <header class="site-header">
+    <header v-if="!isAdminPage" class="site-header">
       <div class="container header-inner">
         <router-link to="/" class="brand-mark">
           <img class="brand-logo-image" src="/logo.png" alt="카드거래소 로고">
@@ -96,8 +88,8 @@ onMounted(() => {
               </button>
             </div>
           </div>
-          <button type="button" class="nav-icon-button theme-button" @click="toggleTheme" :title="themeLabel">
-            <svg v-if="theme === 'light'" class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button type="button" class="nav-icon-button theme-button" @click="themeStore.toggleTheme" :title="themeLabel">
+            <svg v-if="themeStore.theme === 'light'" class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
             <svg v-else class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -132,7 +124,7 @@ onMounted(() => {
       <router-view />
     </main>
 
-    <footer class="site-footer">
+    <footer v-if="!isAdminPage" class="site-footer">
       <div class="container footer-inner">
         <div>
           <strong>카드거래소</strong>

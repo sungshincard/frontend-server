@@ -17,6 +17,9 @@ import Orders from '../views/Orders.vue';
 import OrderDetail from '../views/OrderDetail.vue';
 import AddressBook from '../views/AddressBook.vue';
 import CardRequest from '../views/CardRequest.vue';
+import AdminLayout from '../layouts/AdminLayout.vue';
+import AdminHome from '../views/admin/AdminHome.vue';
+import AdminCardMaster from '../views/admin/AdminCardMaster.vue';
 import ReviewForm from '../views/ReviewForm.vue';
 import DisputeForm from '../views/DisputeForm.vue';
 import Policy from '../views/Policy.vue';
@@ -133,6 +136,23 @@ const routes = [
     path: '/orders/checkout',
     name: 'Checkout',
     component: Checkout
+  },
+  {
+    path: '/admin',
+    component: AdminLayout,
+    meta: { requiresAdmin: true },
+    children: [
+      {
+        path: '',
+        name: '어드민 대시보드',
+        component: AdminHome
+      },
+      {
+        path: 'card-masters',
+        name: '카드 도감 관리',
+        component: AdminCardMaster
+      }
+    ]
   }
 ];
 
@@ -154,6 +174,9 @@ router.beforeEach((to, from, next) => {
   if (authRequired && !authStore.isAuthenticated) {
     toast.error('로그인이 필요한 서비스입니다.');
     next('/login');
+  } else if (to.matched.some(record => record.meta.requiresAdmin) && authStore.userRole !== 'ADMIN') {
+    toast.error('관리자 권한이 필요합니다.');
+    next('/');
   } else if (to.path === '/login' && authStore.isAuthenticated) {
     next('/');
   } else {
