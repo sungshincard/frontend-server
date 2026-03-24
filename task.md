@@ -41,6 +41,11 @@
     - [o] 로딩 상태 및 에러 핸들링 추가
   - [o] 무한 스크롤 및 페이지네이션 기능이 결합된 카드 썸네일 전용 리스트 렌더링
   - [o] 1:1 상품 누끼 이미지에 대응하는 카드 전용 CSS/컴포넌트 설계
+  - [o] 도감에서 특정 포켓몬 클릭 시 해당 카드로 필터링 연동
+  - [o] **무한 스크롤(Infinite Scroll) 적용**
+    - [o] `Dex.vue` Intersection Observer 기반 데이터 추가 로딩
+    - [o] `Cards.vue` Intersection Observer 기반 데이터 추가 로딩
+    - [o] `productService.js` 페이징 파라미터 지원 및 데이터 구조 대응
 - [o] **미등록 카드 요청 폼 (CardRequest)**
   - [o] 사용자가 플랫폼에 미등록 카드 추가를 요구할 수 있는 모달 폼 작성
   - [o] 관리자 처리 결과(Pending, Approved, Rejected) 내역 확인 화면 연동

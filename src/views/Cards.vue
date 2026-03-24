@@ -98,9 +98,23 @@ const searchParams = ref({
   cardSetId: null,
   cardName: '',
   cardNumber: '',
+  pokemonId: null,
+  pokemonName: '',
 })
 
-const fetchCards = async () => {
+const activePage = ref(0)
+const pageSize = 20
+const hasMore = ref(true)
+const observerTarget = ref(null)
+
+const fetchCards = async (isLoadMore = false) => {
+  const loadMore = isLoadMore === true
+  if (!loadMore) {
+    activePage.value = 0
+    hasMore.value = true
+    cards.value = []
+  }
+
   try {
     isLoading.value = true
     const params = {
@@ -111,9 +125,21 @@ const fetchCards = async () => {
       cardNumber: searchParams.value.cardNumber,
       elementalTypeId: activeFilters.value.type,
       evolutionStage: activeFilters.value.evolutionStage,
+      pokemonId: searchParams.value.pokemonId,
+      page: activePage.value,
+      size: pageSize
     }
     const response = await productService.searchCards(params)
-    cards.value = response.data
+    const newItems = response.data || []
+    
+    if (loadMore) {
+      cards.value = [...cards.value, ...newItems]
+    } else {
+      cards.value = newItems
+    }
+
+    hasMore.value = newItems.length === pageSize
+    activePage.value++
   } catch (error) {
     console.error('Failed to fetch cards:', error)
   } finally {
@@ -121,10 +147,40 @@ const fetchCards = async () => {
   }
 }
 
+const handleRouteQuery = () => {
+  const { pokemonId, pokemonName, category } = route.query
+  if (category) {
+    activeCategory.value = category
+  }
+  if (pokemonId) {
+    searchParams.value.pokemonId = parseInt(pokemonId)
+    searchParams.value.pokemonName = pokemonName || ''
+  } else {
+    searchParams.value.pokemonId = null
+    searchParams.value.pokemonName = ''
+  }
+}
+
 onMounted(() => {
   fetchMetadata();
+  handleRouteQuery();
   fetchCards();
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && hasMore.value && !isLoading.value) {
+      fetchCards(true)
+    }
+  }, { threshold: 0.1 })
+
+  if (observerTarget.value) {
+    observer.observe(observerTarget.value)
+  }
 });
+
+watch(() => route.query, () => {
+  handleRouteQuery()
+  fetchCards()
+}, { deep: true })
 
 watch([activeCategory], () => {
   // Reset filters when category changes
@@ -154,6 +210,15 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
       <div class="search-shell">
         <input v-model="searchParams.cardName" type="text" placeholder="포켓몬 이름, 카드명, 카드번호를 검색하세요" aria-label="포켓몬 이름 또는 카드명 검색" @keyup.enter="fetchCards">
         <button type="button" class="search-button" @click="fetchCards">검색</button>
+      </div>
+      
+      <div v-if="searchParams.pokemonId" class="filtered-badge-row">
+        <div class="filtered-badge">
+          <span>포켓몬: <strong>{{ searchParams.pokemonName }}</strong></span>
+          <button type="button" @click="() => { searchParams.pokemonId = null; searchParams.pokemonName = ''; fetchCards(); }">
+            &times;
+          </button>
+        </div>
       </div>
     </section>
 
@@ -259,9 +324,12 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
           </div>
         </article>
       </div>
-      
-      <div class="load-more-container" v-if="visibleCards.length > 0">
-        <button type="button" class="load-more-btn" @click="() => {}">더보기 (무한 스크롤 모의)</button>
+
+      <!-- Intersection Observer Target -->
+      <div ref="observerTarget" class="observer-trigger">
+        <div v-if="isLoading" class="loading-more">
+           <span>Loading more cards...</span>
+        </div>
       </div>
     </section>
   </div>
@@ -316,6 +384,36 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   margin-top: 10px !important;
   color: var(--color-primary) !important;
   font-weight: 700;
+}
+
+.filtered-badge-row {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.filtered-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary);
+  border-radius: 999px;
+  color: var(--color-primary);
+  font-size: 13px;
+}
+
+.filtered-badge button {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
 }
 
 .search-shell {
@@ -395,6 +493,12 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 }
 
 .tab-chip.active {
+  background: var(--color-primary);
+  color: var(--color-background-elevated);
+  border-color: var(--color-primary);
+}
+
+.filter-chip.active {
   background: var(--color-primary);
   color: var(--color-background-elevated);
   border-color: var(--color-primary);
@@ -596,6 +700,27 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 .price-row span {
   font-size: 12px;
   color: var(--color-text-subtle);
+}
+
+.observer-trigger {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.loading-more {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
 @media (max-width: 1100px) {
