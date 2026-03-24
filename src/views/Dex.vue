@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import productService from '../services/productService'
 
@@ -13,21 +13,37 @@ const searchQuery = ref('')
 const regions = ['전체', '관동', '성도', '호연', '신오', '하나', '칼로스', '알로라', '가라르', '히스이', '팔데아']
 const pokemonTypes = ['전체', '풀', '불꽃', '물', '벌레', '무색', '독', '번개', '땅', '요정', '격투', '초', '바위', '강철', '얼음', '고스트', '드래곤', '악', '비행']
 
-const fetchPokemons = async () => {
+const activePage = ref(0)
+const pageSize = 20
+const hasMore = ref(true)
+const observerTarget = ref(null)
+
+const fetchPokemons = async (isLoadMore = false) => {
+  const loadMore = isLoadMore === true // explicitly check for boolean true
+  if (!loadMore) {
+    activePage.value = 0
+    hasMore.value = true
+    dexEntries.value = []
+  }
+
   try {
     isLoading.value = true
-    const params = {}
+    const params = {
+      page: activePage.value,
+      size: pageSize
+    }
     if (activeRegion.value !== '전체') params.region = activeRegion.value
     if (activeType.value !== '전체') params.type = activeType.value
     if (searchQuery.value) params.name = searchQuery.value
 
     const response = await productService.getPokemons(params)
-    if (!response || !response.data) {
-      dexEntries.value = []
-      return
-    }
+    console.log('Dex fetch response:', response)
     
-    dexEntries.value = response.data.map(p => {
+    // ApiResponse structure: { success, message, data: Page<PokemonDto> }
+    const pageData = response.data
+    const newItems = pageData?.content || []
+    
+    const mappedItems = newItems.map(p => {
       const dexNo = p.dexNumber || 0
       return {
         no: dexNo.toString().padStart(3, '0'),
@@ -37,6 +53,22 @@ const fetchPokemons = async () => {
         region: p.region || 'Unknown'
       }
     })
+
+    if (loadMore) {
+      dexEntries.value = [...dexEntries.value, ...mappedItems]
+    } else {
+      dexEntries.value = mappedItems
+    }
+
+    if (pageData) {
+      // Support both Spring Page and raw list fallback
+      hasMore.value = pageData.last !== undefined ? !pageData.last : newItems.length === pageSize
+    } else {
+      hasMore.value = false
+    }
+    console.log('Dex current state:', { dexEntriesCount: dexEntries.value.length, hasMore: hasMore.value, activePage: activePage.value })
+    activePage.value++
+
   } catch (error) {
     console.error('Failed to fetch pokemons:', error)
   } finally {
@@ -55,8 +87,33 @@ const toggleType = (type) => {
   fetchPokemons()
 }
 
-onMounted(() => {
-  fetchPokemons()
+onMounted(async () => {
+  await fetchPokemons()
+  
+  nextTick(() => {
+    const observer = new IntersectionObserver((entries) => {
+      console.log('Observer fire:', entries[0].isIntersecting, 'hasMore:', hasMore.value, 'isLoading:', isLoading.value)
+      if (entries[0].isIntersecting && hasMore.value && !isLoading.value) {
+        console.log('Triggering load more pokemons...')
+        fetchPokemons(true)
+      }
+    }, { threshold: 0.1 })
+
+    if (observerTarget.value) {
+      observer.observe(observerTarget.value)
+      console.log('Started observing dex target')
+      
+      // Manual check if already in view after first load
+      const rect = observerTarget.value.getBoundingClientRect()
+      const isInView = (rect.top >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight))
+      if (isInView && hasMore.value && !isLoading.value) {
+        console.log('Sentinel already in view, loading more...')
+        fetchPokemons(true)
+      }
+    } else {
+      console.error('Observer target not found in Dex.vue')
+    }
+  })
 })
 
 
@@ -65,7 +122,8 @@ const goFilteredCards = (entry) => {
     path: '/cards',
     query: {
       category: '포켓몬',
-      pokemon: entry.name,
+      pokemonId: entry.id,
+      pokemonName: entry.name,
     },
   })
 }
@@ -127,7 +185,7 @@ const goFilteredCards = (entry) => {
         <div v-else-if="dexEntries" key="grid" class="dex-grid" :class="{ loading: isLoading }">
           <button
             v-for="entry in dexEntries"
-            :key="entry.no"
+            :key="entry.id"
             type="button"
             class="dex-entry"
             @click="goFilteredCards(entry)"
@@ -140,6 +198,13 @@ const goFilteredCards = (entry) => {
               <span class="entry-name">{{ entry.name }}</span>
             </div>
           </button>
+        </div>
+
+        <!-- Intersection Observer Target -->
+        <div ref="observerTarget" class="observer-trigger">
+          <div v-if="isLoading" class="loading-more">
+            <span>Loading more pokemons...</span>
+          </div>
         </div>
       </div>
     </section>
@@ -346,6 +411,27 @@ const goFilteredCards = (entry) => {
 @keyframes skeleton-blink {
   0% { opacity: 1; }
   50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.observer-trigger {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.loading-more {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
   100% { opacity: 1; }
 }
 

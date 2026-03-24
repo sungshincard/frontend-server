@@ -41,6 +41,13 @@
     - [o] 로딩 상태 및 에러 핸들링 추가
   - [o] 무한 스크롤 및 페이지네이션 기능이 결합된 카드 썸네일 전용 리스트 렌더링
   - [o] 1:1 상품 누끼 이미지에 대응하는 카드 전용 CSS/컴포넌트 설계
+  - [o] 도감에서 특정 포켓몬 클릭 시 해당 카드로 필터링 연동
+  - [o] **무한 스크롤(Infinite Scroll) 적용**
+    - [o] `Dex.vue` 페이징/Intersection Observer 기반 데이터 로딩 (전용 로딩 인디케이터 포함)
+    - [o] `Cards.vue` 페이징/Intersection Observer 기반 데이터 로딩
+    - [o] `productService.js` 페이징 파라미터 지원 및 데이터 구조 대응
+    - [o] **[New] 무한 스크롤 런타임 오류 및 감지 로직 최적화 (nextTick 및 중복 요청 방지)**
+  - [o] **[New] 카드 탐색 필터 UI 버추얼 가이드 및 하이라이트(Active) 효과 적용**
 - [o] **미등록 카드 요청 폼 (CardRequest)**
   - [o] 사용자가 플랫폼에 미등록 카드 추가를 요구할 수 있는 모달 폼 작성
   - [o] 관리자 처리 결과(Pending, Approved, Rejected) 내역 확인 화면 연동
@@ -59,6 +66,16 @@
 - [ ] **사용자 찜 기능 (Watchlist)**
   - [ ] 상품 찜하기를 위한 반응형 하트 아이콘 토글(Micro-animation 포함) 연동
   - [ ] 내비게이션바 하위 `MyWatchlist.vue` 로 라우팅되는 관심 상품 썸네일 그리드 페이지 
+
+### [Phase 3-A] Admin 대시보드 구조 및 레이아웃
+- [ ] **어드민 레이아웃 구축 (GLOSHOPPER 스타일)**
+  - [ ] `AdminLayout.vue` 사이드바 및 헤더 디자인 적용
+  - [ ] `AdminHome.vue` 카드 기반 대시보드 메인 구현
+  - [ ] 어드민 전용 라우터 가드 및 중첩 라우팅 설정
+
+### [Phase 3-B] 관리자 기능 (Unblocking)
+- [o] 고급 폼 스타일이 적용된 `AdminCardMaster.vue` 구현 (일러스트/확장팩 필드 추가)
+  - [ ] 사이드바 내 관리자 메뉴 연동
 
 ---
 

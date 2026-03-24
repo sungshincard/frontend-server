@@ -33,12 +33,12 @@ watch(() => route.params.cardId, (newId) => {
 })
 
 const relatedCards = computed(() => {
-  if (!card.value) return []
+  if (!card.value || !card.value.groupId) return []
   return getCardsByGroupId(card.value.groupId).filter((item) => item.id !== card.value.id)
 })
 
 const relatedGroups = computed(() => {
-  if (!card.value) return []
+  if (!card.value || !card.value.relatedGroups) return []
   return cardGroups.filter((group) => card.value.relatedGroups.includes(group.id))
 })
 
@@ -77,7 +77,8 @@ const gradingLabel = (listing) => {
     <section class="detail-hero mobile-shell">
       <div class="visual-column">
         <div class="main-visual artwork">
-          <div class="phone-card" :class="card.pokemonCardType?.toLowerCase()">
+          <img v-if="card.imageUrl" :src="card.imageUrl" :alt="card.cardName" class="detail-card-image" />
+          <div v-else class="phone-card" :class="card.pokemonCardType?.toLowerCase()">
             <div class="phone-card-head">
               <span>{{ card.cardName }}</span>
               <small v-if="card.pokemonCardType === 'POKEMON'">{{ card.hp }} HP</small>
@@ -93,7 +94,7 @@ const gradingLabel = (listing) => {
 
       <div class="info-column">
         <p class="eyebrow">{{ card.setName }}</p>
-        <h1>{{ card.name }}</h1>
+        <h1>{{ card.cardName }}</h1>
         <p class="summary">{{ card.summary }}</p>
 
         <div class="spec-grid">
@@ -258,7 +259,7 @@ const gradingLabel = (listing) => {
           <div>
             <p class="eyebrow">Listings</p>
             <h2>구매할 출품을 선택하세요</h2>
-            <span>{{ card.name }}에 등록된 판매 상품 중 하나를 먼저 선택합니다.</span>
+            <span>{{ card.cardName }}에 등록된 판매 상품 중 하나를 먼저 선택합니다.</span>
           </div>
           <button type="button" class="overlay-close" @click="closePurchaseOverlay">닫기</button>
         </div>
@@ -325,6 +326,13 @@ const gradingLabel = (listing) => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.detail-card-image {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
 }
 
 .phone-card {
