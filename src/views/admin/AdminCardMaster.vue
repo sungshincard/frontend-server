@@ -14,6 +14,9 @@ const sets = ref([]);
 const rarityOptions = ref([]);
 const attributeOptions = ref([]);
 const stageOptions = ref([]);
+const blockOptions = ref([]);
+const expansionCodeOptions = ref([]);
+const illustratorOptions = ref([]);
 
 const form = ref({
   pokemonId: null,
@@ -27,20 +30,22 @@ const form = ref({
   elementalTypeId: null,
   hp: null,
   evolutionStageId: null,
-  illustrator: '',
-  block: '',
-  expansion: ''
+  illustratorId: null,
+  blockId: null,
+  expansionCodeId: null
 });
 
 const fetchMetadata = async () => {
   try {
     const res = await productService.getMetadata(form.value.gameType);
-    // res.data.data (ApiResponse wrapped)
-    const metadata = res.data.data;
+    const metadata = res.data;
     sets.value = metadata.cardSets || [];
     rarityOptions.value = metadata.rarities || [];
     attributeOptions.value = metadata.elementalTypes || [];
     stageOptions.value = metadata.evolutionStages || [];
+    blockOptions.value = metadata.blocks || [];
+    expansionCodeOptions.value = metadata.expansionCodes || [];
+    illustratorOptions.value = metadata.illustrators || [];
   } catch (error) {
     console.error('Failed to fetch metadata', error);
   }
@@ -102,9 +107,9 @@ const resetForm = () => {
     elementalTypeId: null,
     hp: null,
     evolutionStageId: null,
-    illustrator: '',
-    block: '',
-    expansion: ''
+    illustratorId: null,
+    blockId: null,
+    expansionCodeId: null
   };
   searchQuery.value = '';
 };
@@ -247,12 +252,31 @@ watch(searchQuery, (newVal) => {
               </div>
               <div class="row-2">
                 <div class="input-group">
+                  <label>레귤레이션 블록 (Block)</label>
+                  <select v-model="form.blockId">
+                    <option :value="null">N/A</option>
+                    <option v-for="b in blockOptions" :key="b.id" :value="b.id">{{ b.name }}</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>확장팩 코드 (Expansion Code)</label>
+                  <select v-model="form.expansionCodeId">
+                    <option :value="null">N/A</option>
+                    <option v-for="ec in expansionCodeOptions" :key="ec.id" :value="ec.id">{{ ec.name }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row-2">
+                <div class="input-group">
                   <label>이미지 URL</label>
                   <input type="url" v-model="form.imageUrl" placeholder="https://..." />
                 </div>
                 <div class="input-group">
                   <label>일러스트레이터</label>
-                  <input type="text" v-model="form.illustrator" placeholder="Amano Art" />
+                  <select v-model="form.illustratorId">
+                    <option :value="null">N/A</option>
+                    <option v-for="i in illustratorOptions" :key="i.id" :value="i.id">{{ i.name }}</option>
+                  </select>
                 </div>
               </div>
             </section>
