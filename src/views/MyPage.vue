@@ -61,12 +61,6 @@ const goAccountVerify = () => {
 };
 
 const fetchProfile = async () => {
-  if (authStore.isMockSession && authStore.user) {
-    profile.value = authStore.user;
-    isLoading.value = false;
-    return;
-  }
-
   try {
     const response = await authService.getMe();
     profile.value = response.data;
