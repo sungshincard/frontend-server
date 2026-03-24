@@ -1,24 +1,23 @@
 @import url('https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css');
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-:root,
-:root[data-theme='light'] {
-  /* SNKRDUNK Exact CSS Variables */
-  --color-primary: #000000; /* Black buttons */
+:root {
+  /* Default (Light Mode) */
+  --color-primary: #000000;
   --color-primary-strong: #222222;
-  --color-accent: #ff4d00; /* Promo Orange */
-  --color-link: #1d3e91; /* Link Blue */
+  --color-accent: #ff4d00;
+  --color-link: #1d3e91;
   
-  --color-background: #ffffff; /* Pure white body */
+  --color-background: #ffffff;
   --color-background-elevated: #ffffff;
   
   --color-panel: #ffffff;
   --color-panel-soft: #f9f9f9;
-  --color-border: #eeeeee; /* Light gray dividers */
+  --color-border: #eeeeee;
   
   --color-text-strong: #000000;
   --color-text-muted: #222222;
-  --color-text-subtle: #757575; /* Secondary labels */
+  --color-text-subtle: #757575;
   
   --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
   
@@ -36,12 +35,11 @@
   --color-primary-text: #ffffff;
 }
 
-:root[data-theme='dark'] {
-  /* SNKRDUNK Dark Mode Translation */
-  --color-primary: #ffffff;
-  --color-primary-strong: #f0f0f0;
+html[data-theme='dark'] {
+  --color-primary: #4f46e5;
+  --color-primary-strong: #4338ca;
   --color-accent: #ff4d00;
-  --color-link: #4da3ff;
+  --color-link: #818cf8; /* Lighter indigo for links in dark mode */
   
   --color-background: #111111;
   --color-background-elevated: #1a1a1a;
@@ -56,18 +54,9 @@
   
   --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.4);
   
-  --font-heading: 'SUIT', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-body: 'Pretendard', 'SUIT', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 8px;
-  
-  --transition-fast: 0.2s ease-out;
-  
   --color-text: var(--color-text-muted);
   --color-text-light: var(--color-text-subtle);
-  --color-primary-text: #000000;
+  --color-primary-text: #ffffff;
 }
 
 *,
@@ -91,7 +80,7 @@ body {
 }
 
 a {
-  color: inherit;
+  color: var(--color-link);
   text-decoration: none;
   transition: color var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
 }
