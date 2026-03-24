@@ -275,8 +275,8 @@ const goFilteredCards = (entry) => {
 }
 
 .entry-img {
-  width: 60px;
-  height: 60px;
+  width: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
