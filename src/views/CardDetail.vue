@@ -4,23 +4,40 @@ import { useRoute, useRouter } from 'vue-router'
 import { cardGroups, getCardsByGroupId, getStoreByName } from '../data/catalog'
 import { useWatchlistStore } from '../stores/watchlist'
 import productService from '../services/productService'
+import { getImageUrl } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
 const watchlistStore = useWatchlistStore()
-const marketFilters = ['모든 상태', 'A', 'B', 'C', 'D', 'PSA10', 'PSA9', 'PSA8 이하', 'BGS10 BL', 'BGS10 G']
+const marketFilters = ['모든 상태', 'S', 'A', 'B', 'C', 'D']
+const activeMarketFilter = ref('모든 상태')
+const listings = ref([])
 const card = ref(null)
 const isLoading = ref(true)
+const showPurchaseOverlay = ref(false)
 
 const fetchCardDetail = async (id) => {
   try {
     isLoading.value = true
     const response = await productService.getCardDetail(id)
     card.value = response.data
+    // Fetch listings for this card
+    fetchListings()
   } catch (error) {
     console.error('Failed to fetch card detail:', error)
   } finally {
     isLoading.value = false
+  }
+}
+
+const fetchListings = async () => {
+  if (!card.value) return
+  try {
+    const condition = activeMarketFilter.value === '모든 상태' ? null : activeMarketFilter.value
+    const response = await productService.getSaleCardsByCardMaster(card.value.id, condition)
+    listings.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch listings:', error)
   }
 }
 
@@ -32,7 +49,10 @@ watch(() => route.params.cardId, (newId) => {
   if (newId) fetchCardDetail(newId)
 })
 
+watch(activeMarketFilter, fetchListings)
+
 const relatedCards = computed(() => {
+  // Still using mock related for now as per plan focus on Phase 3
   if (!card.value || !card.value.groupId) return []
   return getCardsByGroupId(card.value.groupId).filter((item) => item.id !== card.value.id)
 })
@@ -42,27 +62,36 @@ const relatedGroups = computed(() => {
   return cardGroups.filter((group) => card.value.relatedGroups.includes(group.id))
 })
 
-const listingGallery = computed(() => {
-  if (!card.value) return []
-
-  return card.value.saleCards
-})
+const listingGallery = computed(() => listings.value)
 
 const goCard = (cardId) => router.push(`/cards/${cardId}`)
 const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
-const goSaleCardNew = () => router.push({ path: '/saleCards/new', query: { cardId: card.value?.id } })
+const goSaleCardNew = () => router.push({ path: '/sale-cards/new', query: { cardId: card.value?.id } })
 const openPurchaseOverlay = () => { showPurchaseOverlay.value = true }
 const closePurchaseOverlay = () => { showPurchaseOverlay.value = false }
-const goSaleCardDetail = (saleCardId) => router.push(`/saleCards/${saleCardId}`)
+const goSaleCardDetail = (saleCardId) => router.push(`/sale-cards/${saleCardId}`)
 const goStore = (seller) => {
+  // If we have seller store ID in response, use it. For now, using mock.
   const store = getStoreByName(seller)
   if (store) router.push(`/stores/${store.id}`)
 }
-const toggleWatchlist = () => {
+
+const toggleWatchlist = async () => {
   if (!card.value) return
-  watchlistStore.toggle(card.value.id)
+  try {
+    await productService.toggleWatchlist(card.value.id)
+    // Manually toggle or refetch
+    card.value.isWatched = !card.value.isWatched
+    card.value.favoriteCount = card.value.isWatched 
+      ? (card.value.favoriteCount || 0) + 1 
+      : Math.max(0, (card.value.favoriteCount || 0) - 1)
+  } catch (error) {
+    console.error('Toggle watchlist failed:', error)
+    alert('관심 등록 처리에 실패했습니다. 로그인이 필요할 수 있습니다.')
+  }
 }
-const isWatched = computed(() => (card.value ? watchlistStore.hasCard(card.value.id) : false))
+const isWatched = computed(() => card.value?.isWatched || false)
+const favoriteCount = computed(() => card.value?.favoriteCount || 0)
 
 </script>
 
@@ -131,7 +160,9 @@ const isWatched = computed(() => (card.value ? watchlistStore.hasCard(card.value
           <button type="button" class="primary" @click="openPurchaseOverlay">구매하기</button>
           <button type="button" class="secondary" @click="goSaleCardNew">출품하기</button>
           <button type="button" class="tertiary" @click="toggleWatchlist">
+            <span class="heart-icon" :class="{ active: isWatched }">❤️</span>
             {{ isWatched ? '관심 해제' : '관심 등록' }}
+            <small v-if="favoriteCount > 0">{{ favoriteCount }}</small>
           </button>
         </div>
       </div>
@@ -147,24 +178,25 @@ const isWatched = computed(() => (card.value ? watchlistStore.hasCard(card.value
         <div class="listing-gallery">
           <article
             v-for="item in listingGallery"
-            :key="`${item.seller}-${item.price}`"
+            :key="item.id"
             class="listing-card"
             role="button"
             tabindex="0"
             @click="goSaleCardDetail(item.id)"
           >
             <div class="listing-image">
-              <img :src="item.imageUrl" :alt="item.seller" />
-              <strong class="listing-price-overlay">{{ item.price }}</strong>
+              <img v-if="item.imageUrls && item.imageUrls.length > 0" :src="getImageUrl(item.imageUrls[0])" :alt="item.title" />
+              <div v-else class="no-img-placeholder">실물 사진 없음</div>
+              <strong class="listing-price-overlay">{{ item.price?.toLocaleString() }}원</strong>
               <span class="listing-grade-overlay">{{ item.conditionGrade }} 등급</span>
             </div>
             <div class="listing-copy">
-              <strong>{{ item.seller }}</strong>
+              <strong>{{ item.title }}</strong>
               <p>
-                {{ item.seller }}
+                {{ item.sellerNickname }}
                 · {{ item.conditionGrade }} 등급
               </p>
-              <span>{{ item.date }}</span>
+              <span>{{ new Date(item.createdAt).toLocaleDateString() }}</span>
             </div>
           </article>
         </div>
@@ -487,6 +519,20 @@ const isWatched = computed(() => (card.value ? watchlistStore.hasCard(card.value
   background: var(--color-panel-soft);
   color: var(--color-text-strong);
   border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.heart-icon {
+  filter: grayscale(1);
+  transition: transform 0.2s;
+}
+
+.heart-icon.active {
+  filter: grayscale(0);
+  transform: scale(1.2);
 }
 
 .detail-grid {

@@ -1,25 +1,28 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCardById, getSaleCardById } from '../data/catalog'
+import productService from '../services/productService'
+import ImageUpload from '../components/ImageUpload.vue'
 
 const route = useRoute()
 const router = useRouter()
 
-const saleCardId = computed(() => route.params.saleCardId || '')
-const editingListing = computed(() => (saleCardId.value ? getSaleCardById(saleCardId.value) : null))
-const cardId = computed(() => editingListing.value?.cardId || route.query.cardId || 'charizard-ex-sar-151')
-const card = computed(() => editingListing.value?.card || getCardById(cardId.value))
+const cardId = computed(() => route.query.cardId)
+const saleCardId = computed(() => route.params.saleCardId)
+const isEditing = computed(() => !!saleCardId.value)
 
-const condition = ref('A')
-const title = ref(editingListing.value?.title || card.value?.name || '')
-const description = ref(editingListing.value?.description || '')
-const price = ref(editingListing.value?.price?.replace(/[^0-9]/g, '') || card.value?.lowestPrice?.replace(/[^0-9]/g, '') || '189000')
-const listingStatus = ref(editingListing.value?.status || 'ACTIVE')
+const card = ref(null)
+const isLoading = ref(true)
+const imageUploadRef = ref(null)
 
-if (editingListing.value) {
-  condition.value = editingListing.value.conditionGrade
-}
+const form = ref({
+  title: '',
+  description: '',
+  price: '',
+  conditionGrade: 'A',
+  status: 'ACTIVE',
+  imageUrls: []
+})
 
 const conditionOptions = [
   { value: 'S', label: '새 상품(미사용)' },
@@ -31,6 +34,73 @@ const conditionOptions = [
 
 const listingStatuses = ['ACTIVE', 'RESERVED', 'SOLD', 'HIDDEN']
 
+const fetchInitialData = async () => {
+  try {
+    isLoading.value = true
+    if (cardId.value) {
+      const response = await productService.getCardDetail(cardId.value)
+      card.value = response.data
+      form.value.title = card.value.cardName
+    }
+
+    if (isEditing.value) {
+      const response = await productService.getSaleCardDetail(saleCardId.value)
+      const data = response.data
+      form.value = {
+        title: data.title,
+        description: data.description,
+        price: data.price.toString(),
+        conditionGrade: data.conditionGrade,
+        status: data.status,
+        imageUrls: data.imageUrls
+      }
+      // Set previews in ImageUpload.vue if needed (logic handled by v-model or direct ref)
+    }
+  } catch (error) {
+    console.error('Failed to fetch initial data:', error)
+    alert('데이터를 불러오는데 실패했습니다.')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(fetchInitialData)
+
+const handleSubmit = async () => {
+  if (!form.value.title || !form.value.price) {
+    alert('상품명과 가격을 입력해주세요.')
+    return
+  }
+
+  try {
+    // 1. Upload images first
+    await imageUploadRef.value.uploadAll()
+    
+    // 2. Create or Update SaleCard
+    const payload = {
+      cardMasterId: card.value.id,
+      title: form.value.title,
+      description: form.value.description,
+      price: parseInt(form.value.price),
+      conditionGrade: form.value.conditionGrade,
+      status: form.value.status,
+      imageUrls: form.value.imageUrls
+    }
+
+    if (isEditing.value) {
+      await productService.updateSaleCard(saleCardId.value, payload)
+      alert('수정이 완료되었습니다.')
+    } else {
+      await productService.createSaleCard(payload)
+      alert('등록이 완료되었습니다.')
+    }
+    
+    goBack()
+  } catch (error) {
+    console.error('Submit failed:', error)
+  }
+}
+
 const goBack = () => {
   if (card.value) {
     router.push(`/cards/${card.value.id}`)
@@ -41,12 +111,15 @@ const goBack = () => {
 </script>
 
 <template>
-  <div v-if="card" class="listing-page container">
+  <div v-if="isLoading" class="loading-state container">
+    <p>데이터를 불러오는 중입니다...</p>
+  </div>
+  <div v-else-if="card" class="listing-page container">
     <div class="page-head">
       <div>
         <p class="eyebrow">Listing Form</p>
-        <h1>{{ editingListing ? '출품 수정' : '출품하기' }}</h1>
-        <p>번개장터처럼 상품 등록 폼 중심으로 구성하고, 카드 정보는 상단에서만 요약합니다.</p>
+        <h1>{{ isEditing ? '출품 수정' : '출품하기' }}</h1>
+        <p>실제 카드 정보를 기반으로 상품을 등록합니다.</p>
       </div>
       <button type="button" class="back-button" @click="goBack">카드 상세로 돌아가기</button>
     </div>
@@ -54,22 +127,23 @@ const goBack = () => {
     <section class="listing-form-card">
       <div class="form-section summary-section">
         <div class="summary-card">
-          <div class="phone-card">
+          <div class="phone-card" :class="card.pokemonCardType?.toLowerCase()">
             <div class="phone-card-head">
-              <span>{{ card.name }}</span>
-              <small>{{ card.hp }}</small>
+              <span>{{ card.cardName }}</span>
+              <small v-if="card.hp">{{ card.hp }} HP</small>
             </div>
-            <div class="phone-card-art"></div>
+            <img v-if="card.imageUrl" :src="card.imageUrl" class="phone-card-img" />
+            <div v-else class="phone-card-art"></div>
             <div class="phone-card-foot">
-              <span>{{ card.type }}</span>
+              <span>{{ card.evolutionStage || '기본' }}</span>
               <span>{{ card.cardNumber }}</span>
             </div>
           </div>
         </div>
 
         <div class="summary-copy">
-          <strong>{{ card.name }}</strong>
-          <span>{{ card.setName }} · {{ card.rarity }}</span>
+          <strong>{{ card.cardName }}</strong>
+          <span>{{ card.cardSetName }} · {{ card.rarity }}</span>
           <small>카드 상세에서 보던 카드 기준으로 바로 출품을 등록합니다.</small>
         </div>
       </div>
@@ -80,30 +154,31 @@ const goBack = () => {
         </div>
 
         <div class="form-grid single">
-          <label class="field">
+          <div class="field">
             <span>상품 이미지</span>
-            <button type="button" class="image-upload-box">
-              <strong>이미지 등록</strong>
-              <small>최소 1장부터 업로드 가능</small>
-            </button>
-          </label>
+            <ImageUpload 
+              ref="imageUploadRef"
+              v-model="form.imageUrls"
+              :max-files="5"
+            />
+          </div>
         </div>
 
         <div class="form-grid single">
           <label class="field">
             <span>상품명</span>
-            <input v-model="title" type="text" placeholder="상품명을 입력해 주세요." maxlength="40">
+            <input v-model="form.title" type="text" placeholder="상품명을 입력해 주세요." maxlength="40">
           </label>
         </div>
 
         <div class="form-grid two">
           <div class="field static-field">
             <span>카드명</span>
-            <strong>{{ card.name }}</strong>
+            <strong>{{ card.cardName }}</strong>
           </div>
           <div class="field static-field">
             <span>세트 / 번호</span>
-            <strong>{{ card.setName }} / {{ card.cardNumber }}</strong>
+            <strong>{{ card.cardSetName }} / {{ card.cardNumber }}</strong>
           </div>
         </div>
       </div>
@@ -117,9 +192,9 @@ const goBack = () => {
             v-for="item in conditionOptions"
             :key="item.value"
             class="condition-row"
-            :class="{ active: condition === item.value }"
+            :class="{ active: form.conditionGrade === item.value }"
           >
-            <input v-model="condition" type="radio" :value="item.value">
+            <input v-model="form.conditionGrade" type="radio" :value="item.value">
             <span>{{ item.label }}</span>
           </label>
         </div>
@@ -132,7 +207,7 @@ const goBack = () => {
         </div>
         <label class="field">
           <textarea
-            v-model="description"
+            v-model="form.description"
             rows="7"
             placeholder="상태, 스크래치, 케이스 여부, 하자 유무 등을 설명해 주세요."
           />
@@ -147,14 +222,14 @@ const goBack = () => {
           <label class="field">
             <span>판매 가격</span>
             <div class="price-input">
-              <input v-model="price" type="text" inputmode="numeric" placeholder="가격 입력">
+              <input v-model="form.price" type="text" inputmode="numeric" placeholder="가격 입력">
               <small>원</small>
             </div>
           </label>
           <div class="field static-field">
             <span>시세 참고</span>
-            <strong>최저가 {{ card.lowestPrice }}</strong>
-            <small>평균 거래가 {{ card.averagePrice }}</small>
+            <strong>최저가 {{ card.lowestPrice || '-' }}</strong>
+            <small>평균 거래가 {{ card.averagePrice || '-' }}</small>
           </div>
         </div>
       </div>
@@ -169,8 +244,8 @@ const goBack = () => {
             :key="status"
             type="button"
             class="select-chip"
-            :class="{ active: listingStatus === status }"
-            @click="listingStatus = status"
+            :class="{ active: form.status === status }"
+            @click="form.status = status"
           >
             {{ status }}
           </button>
@@ -178,8 +253,10 @@ const goBack = () => {
       </div>
 
       <div class="submit-row">
-        <button type="button" class="ghost-button" @click="goBack">임시저장</button>
-        <button type="button" class="submit-button">{{ editingListing ? '수정 완료' : '등록하기' }}</button>
+        <button type="button" class="ghost-button" @click="goBack">취소</button>
+        <button type="button" class="submit-button" @click="handleSubmit">
+          {{ isEditing ? '수정 완료' : '등록하기' }}
+        </button>
       </div>
     </section>
   </div>
@@ -285,14 +362,19 @@ const goBack = () => {
   font-size: 14px;
 }
 
-.phone-card-art {
+.phone-card-art, .phone-card-img {
   flex: 1;
   margin: 12px 0;
-  border-radius: 24px;
+  border-radius: 20px;
   background:
     radial-gradient(circle at 40% 26%, rgba(255,255,255,0.6), transparent 20%),
     linear-gradient(135deg, rgba(122,104,30,0.65), rgba(240,217,117,0.2)),
     linear-gradient(180deg, #87722e, #e3d15f);
+}
+
+.phone-card-img {
+  width: 100%;
+  object-fit: cover;
 }
 
 .summary-copy {

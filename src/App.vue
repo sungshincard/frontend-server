@@ -1,15 +1,18 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useThemeStore } from './stores/themeStore'
 import { useRouter } from 'vue-router'
-import { notifications } from './data/catalog'
+import notificationService from './services/notificationService'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const router = useRouter()
 
 const showNotifications = ref(false)
+const notifications = ref([])
+const unreadCount = ref(0)
+const sseSource = ref(null)
 
 const handleLogout = () => {
   authStore.logout()
@@ -17,7 +20,6 @@ const handleLogout = () => {
 }
 
 const themeLabel = computed(() => (themeStore.theme === 'dark' ? '라이트 모드' : '다크 모드'))
-const unreadCount = computed(() => notifications.filter((item) => !item.read).length)
 const isAdminPage = computed(() => router.currentRoute.value.path.startsWith('/admin'))
 const userMetaLabel = computed(() => {
   if (!authStore.isAuthenticated) return ''
@@ -25,17 +27,124 @@ const userMetaLabel = computed(() => {
   return '내 상점 운영'
 })
 
-const toggleNotifications = () => {
+const toggleNotifications = async () => {
   showNotifications.value = !showNotifications.value
+  if (showNotifications.value) {
+    await fetchNotifications()
+  }
 }
 
-const goNotification = (href) => {
-  showNotifications.value = false
-  router.push(href)
+const fetchNotifications = async () => {
+  if (!authStore.isAuthenticated) return
+  try {
+    const response = await notificationService.getMyNotifications()
+    notifications.value = response.data
+    await fetchUnreadCount()
+  } catch (error) {
+    console.error('Failed to fetch notifications:', error)
+  }
+}
+
+const fetchUnreadCount = async () => {
+  if (!authStore.isAuthenticated) return
+  try {
+    const response = await notificationService.getUnreadCount()
+    unreadCount.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch unread count:', error)
+  }
+}
+
+const markAsRead = async (id, href) => {
+  try {
+    await notificationService.markAsRead(id)
+    showNotifications.value = false
+    router.push(href)
+    fetchUnreadCount() // Update count after marking as read
+  } catch (error) {
+    console.error('Failed to mark as read:', error)
+    router.push(href) // Still go to link even if read mark fails
+  }
+}
+
+const markAllAsRead = async () => {
+  try {
+    await notificationService.markAllAsRead()
+    await fetchNotifications()
+  } catch (error) {
+    console.error('Failed to mark all as read:', error)
+  }
+}
+
+const deleteNotification = async (id, event) => {
+  if (event) event.stopPropagation()
+  try {
+    await notificationService.deleteNotification(id)
+    notifications.value = notifications.value.filter(n => n.id !== id)
+    fetchUnreadCount()
+  } catch (error) {
+    console.error('Failed to delete notification:', error)
+  }
+}
+
+const connectSSE = () => {
+  if (sseSource.value) {
+    sseSource.value.close()
+  }
+  
+  if (!authStore.token) return
+  
+  const url = `http://localhost:8080/api/v1/notifications/subscribe?token=${authStore.token}`
+  const source = new EventSource(url)
+  sseSource.value = source
+
+  source.addEventListener('notification', (event) => {
+    const data = JSON.parse(event.data)
+    // Add to top of list
+    notifications.value.unshift(data)
+    if (notifications.value.length > 10) {
+      notifications.value.pop()
+    }
+    unreadCount.value++
+  })
+
+  source.addEventListener('connect', (event) => {
+    console.log('SSE Connected:', event.data)
+  })
+
+  source.onerror = (err) => {
+    console.error('SSE Error:', err)
+    source.close()
+    sseSource.value = null
+    // Retry connection after 5s
+    setTimeout(connectSSE, 5000)
+  }
+}
+
+const disconnectSSE = () => {
+  if (sseSource.value) {
+    sseSource.value.close()
+    sseSource.value = null
+  }
 }
 
 onMounted(() => {
   themeStore.initTheme()
+  if (authStore.isAuthenticated) {
+    fetchUnreadCount()
+    connectSSE()
+  }
+})
+
+watch(() => authStore.isAuthenticated, (newVal) => {
+  if (newVal) {
+    fetchUnreadCount()
+    connectSSE()
+  } else {
+    notifications.value = []
+    unreadCount.value = 0
+    disconnectSSE()
+  }
 })
 </script>
 
@@ -74,18 +183,33 @@ onMounted(() => {
               <div class="notification-head">
                 <strong>알림</strong>
               </div>
-              <button
-                v-for="item in notifications"
-                :key="item.id"
-                type="button"
-                class="notification-item"
-                :class="{ unread: !item.read }"
-                @click="goNotification(item.href)"
-              >
-                <strong>{{ item.title }}</strong>
-                <span>{{ item.message }}</span>
-                <small>{{ item.time }}</small>
-              </button>
+              <div v-if="notifications.length > 0" class="notification-list">
+                <div
+                  v-for="item in notifications"
+                  :key="item.id"
+                  class="notification-item"
+                  :class="{ unread: !item.read }"
+                  @click="markAsRead(item.id, item.relatedUrl)"
+                >
+                  <div class="notification-content">
+                    <strong>{{ item.type === 'NEW_LISTING' ? '신규 출품' : (item.type === 'ORDER_STATUS' ? '주문 상태' : '알림') }}</strong>
+                    <span>{{ item.content }}</span>
+                    <small>{{ new Date(item.createdAt).toLocaleString() }}</small>
+                  </div>
+                  <button type="button" class="notification-delete" @click="deleteNotification(item.id, $event)" title="삭제">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+                <div class="notification-foot">
+                  <button type="button" class="text-link" @click="markAllAsRead">모두 읽음 처리</button>
+                </div>
+              </div>
+              <div v-else class="notification-empty">
+                알림이 없습니다.
+              </div>
             </div>
           </div>
           <button type="button" class="nav-icon-button theme-button" @click="themeStore.toggleTheme" :title="themeLabel">
@@ -329,6 +453,67 @@ onMounted(() => {
 .notification-item span,
 .notification-item small {
   color: var(--color-text-subtle);
+}
+
+.notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    cursor: pointer;
+}
+
+.notification-content {
+    flex: 1;
+    display: grid;
+    gap: 4px;
+}
+
+.notification-delete {
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--color-text-subtle);
+    background: transparent;
+    border: none;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.notification-item:hover .notification-delete {
+    opacity: 1;
+}
+
+.notification-delete:hover {
+    background: var(--color-panel-soft);
+    color: var(--color-error);
+}
+
+.notification-empty {
+  padding: 30px 16px;
+  text-align: center;
+  color: var(--color-text-subtle);
+  font-size: 0.9rem;
+}
+
+.notification-foot {
+  padding: 12px 16px;
+  text-align: center;
+  border-top: 1px solid var(--color-border);
+}
+
+.text-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.text-link:hover {
+  text-decoration: underline;
 }
 
 .user-chip strong {

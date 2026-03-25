@@ -1,63 +1,71 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { cards } from '../data/catalog'
-import { useWatchlistStore } from '../stores/watchlist'
+import productService from '../services/productService'
 
 const router = useRouter()
-const watchlistStore = useWatchlistStore()
+const watchlist = ref([])
+const isLoading = ref(true)
 
-const watchedCards = computed(() => cards.filter((card) => watchlistStore.cardIds.includes(card.id)))
-const goCard = (cardId) => router.push(`/cards/${cardId}`)
+const fetchWatchlist = async () => {
+  try {
+    isLoading.value = true
+    const response = await productService.getMyWatchlist()
+    watchlist.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch watchlist:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(fetchWatchlist)
+
+const goCard = (id) => router.push(`/cards/${id}`)
 </script>
 
 <template>
   <div class="watchlist-page container">
     <div class="page-head">
       <div>
-        <p class="eyebrow">Watchlist</p>
-        <h1>관심 카드</h1>
-        <p>하트로 저장한 카드만 모아서 최저가와 최근 거래가를 확인합니다.</p>
+        <p class="eyebrow">Collection</p>
+        <h1>관심 상품</h1>
+        <p>내가 찜한 카드 목록입니다.</p>
       </div>
     </div>
 
-    <section v-if="watchedCards.length" class="watchlist-grid">
-      <article
-        v-for="card in watchedCards"
-        :key="card.id"
-        class="watch-card"
-        role="button"
-        tabindex="0"
+    <div v-if="isLoading" class="loading-state">
+      <p>관심 목록을 불러오는 중...</p>
+    </div>
+
+    <div v-else-if="watchlist.length === 0" class="empty-state">
+      <div class="empty-icon">❤️</div>
+      <h3>관심 상품이 없습니다.</h3>
+      <p>도감에서 마음에 드는 카드를 찜해 보세요!</p>
+      <button type="button" class="primary-button" @click="router.push('/cards')">카드 보러가기</button>
+    </div>
+
+    <div v-else class="watchlist-grid">
+      <article 
+        v-for="card in watchlist" 
+        :key="card.id" 
+        class="card-item"
         @click="goCard(card.id)"
       >
-        <div class="watch-card-visual">
-          <div class="watch-card-shell">
-            <div class="watch-card-head">
-              <span>{{ card.name }}</span>
-              <small>{{ card.hp }}</small>
-            </div>
-            <div class="watch-card-art"></div>
-            <div class="watch-card-foot">
-              <span>{{ card.type }}</span>
-              <span>{{ card.cardNumber }}</span>
-            </div>
-          </div>
+        <div class="card-visual">
+          <img v-if="card.imageUrl" :src="card.imageUrl" :alt="card.cardName" />
+          <div v-else class="placeholder-art"></div>
         </div>
-        <div class="watch-card-copy">
-          <strong>{{ card.name }}</strong>
-          <span>{{ card.setName }} · {{ card.rarity }}</span>
-          <div class="watch-card-prices">
-            <div><small>최저가</small><strong>{{ card.lowestPrice }}</strong></div>
-            <div><small>최근 거래가</small><strong>{{ card.recentPrice }}</strong></div>
+        <div class="card-info">
+          <span class="set-name">{{ card.cardSetName }}</span>
+          <strong>{{ card.cardName }}</strong>
+          <div class="card-meta">
+            <span>{{ card.rarity }}</span>
+            <span class="price" v-if="card.lowestPrice">{{ card.lowestPrice.toLocaleString() }}원~</span>
           </div>
         </div>
       </article>
-    </section>
-
-    <section v-else class="empty-box">
-      <strong>관심 카드가 아직 없습니다.</strong>
-      <p>카드 상세에서 하트를 눌러 관심 카드를 추가해 보세요.</p>
-    </section>
+    </div>
   </div>
 </template>
 
@@ -66,112 +74,117 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   padding: 40px 0 80px;
 }
 
+.page-head {
+  margin-bottom: 32px;
+}
+
 .eyebrow {
-  margin: 0 0 8px;
   color: var(--color-primary);
-  font-size: 0.84rem;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.16em;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
 }
 
-.page-head h1,
-.watch-card-copy strong,
-.watch-card-prices strong,
-.empty-box strong {
+.page-head h1 {
+  font-size: 32px;
   color: var(--color-text-strong);
+  margin: 0 0 8px;
 }
 
-.page-head p,
-.watch-card-copy span,
-.watch-card-prices small,
-.empty-box p {
+.page-head p {
   color: var(--color-text-muted);
 }
 
 .watchlist-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 20px;
 }
 
-.watch-card,
-.empty-box {
-  border: 1px solid var(--color-border);
-  border-radius: 24px;
+.card-item {
   background: var(--color-panel);
-  box-shadow: var(--shadow-soft);
-}
-
-.watch-card {
-  padding: 20px;
-  display: grid;
-  gap: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  overflow: hidden;
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.watch-card-visual {
+.card-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-soft);
+  border-color: var(--color-primary);
+}
+
+.card-visual {
+  aspect-ratio: 0.71;
+  background: var(--color-panel-soft);
   display: flex;
+  align-items: center;
   justify-content: center;
 }
 
-.watch-card-shell {
-  width: min(100%, 220px);
-  aspect-ratio: 0.71;
+.card-visual img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+
+.card-info {
   padding: 16px;
-  border-radius: 26px;
-  background: linear-gradient(180deg, #ecd96f 0%, #ddc341 100%);
-  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.28);
   display: flex;
   flex-direction: column;
-}
-
-.watch-card-head,
-.watch-card-foot {
-  display: flex;
-  justify-content: space-between;
-  color: #2c2407;
-  font-weight: 800;
-}
-
-.watch-card-art {
-  flex: 1;
-  margin: 12px 0;
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 40% 26%, rgba(255,255,255,0.6), transparent 20%),
-    linear-gradient(135deg, rgba(122,104,30,0.65), rgba(240,217,117,0.2)),
-    linear-gradient(180deg, #87722e, #e3d15f);
-}
-
-.watch-card-copy {
-  display: grid;
-  gap: 8px;
-}
-
-.watch-card-prices {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 4px;
-}
-
-.watch-card-prices div {
-  padding: 14px;
-  border-radius: 16px;
-  background: var(--color-background-elevated);
-  display: grid;
   gap: 4px;
 }
 
-.empty-box {
-  padding: 44px 32px;
-  text-align: center;
+.set-name {
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
-@media (max-width: 960px) {
-  .watchlist-grid {
-    grid-template-columns: 1fr;
-  }
+.card-info strong {
+  font-size: 15px;
+  color: var(--color-text-strong);
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.card-meta span {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.price {
+  color: var(--color-primary) !important;
+  font-weight: 700;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 0;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  filter: grayscale(1);
+  opacity: 0.3;
+}
+
+.primary-button {
+  margin-top: 24px;
+  padding: 12px 24px;
+  background: var(--color-primary);
+  color: #2c2407;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 700;
 }
 </style>

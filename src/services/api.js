@@ -39,4 +39,10 @@ apiClient.interceptors.response.use(
   }
 );
 
+export const getImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `http://localhost:8080${path}`;
+};
+
 export default apiClient;
