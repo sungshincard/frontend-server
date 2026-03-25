@@ -4,23 +4,51 @@ import { useRoute, useRouter } from 'vue-router'
 import { cardGroups, getCardsByGroupId, getStoreByName } from '../data/catalog'
 import { useWatchlistStore } from '../stores/watchlist'
 import productService from '../services/productService'
+import { getImageUrl } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
 const watchlistStore = useWatchlistStore()
-const marketFilters = ['모든 상태', 'A', 'B', 'C', 'D', 'PSA10', 'PSA9', 'PSA8 이하', 'BGS10 BL', 'BGS10 G']
+const marketFilters = ['모든 상태', 'S', 'A', 'B', 'C', 'D']
+const activeMarketFilter = ref('모든 상태')
+const listings = ref([])
 const card = ref(null)
 const isLoading = ref(true)
+const showPurchaseOverlay = ref(false)
 
 const fetchCardDetail = async (id) => {
   try {
     isLoading.value = true
     const response = await productService.getCardDetail(id)
+    console.log(response.data);
     card.value = response.data
+    // Fetch listings for this card
+    fetchListings()
   } catch (error) {
     console.error('Failed to fetch card detail:', error)
   } finally {
     isLoading.value = false
+  }
+}
+
+const fetchListings = async () => {
+  if (!card.value) return
+  try {
+    const condition = activeMarketFilter.value === '모든 상태' ? null : activeMarketFilter.value
+    const response = await productService.getSaleCardsByCardMaster(card.value.id, condition)
+    listings.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch listings:', error)
+  }
+}
+
+const fetchRelatedCards = async (pokemonId) => {
+  try {
+    const response = await productService.searchCards({ pokemonId, size: 20 })
+    // Filter out the current card
+    relatedCards.value = response.data.content.filter(c => c.id !== card.value.id)
+  } catch (error) {
+    console.error('Failed to fetch related cards:', error)
   }
 }
 
@@ -32,41 +60,49 @@ watch(() => route.params.cardId, (newId) => {
   if (newId) fetchCardDetail(newId)
 })
 
-const relatedCards = computed(() => {
-  if (!card.value || !card.value.groupId) return []
-  return getCardsByGroupId(card.value.groupId).filter((item) => item.id !== card.value.id)
-})
+watch(activeMarketFilter, fetchListings)
+
+// const relatedCards = computed(() => {
+//   // Still using mock related for now as per plan focus on Phase 3
+//   if (!card.value || !card.value.groupId) return []
+//   return getCardsByGroupId(card.value.groupId).filter((item) => item.id !== card.value.id)
+// })
 
 const relatedGroups = computed(() => {
   if (!card.value || !card.value.relatedGroups) return []
   return cardGroups.filter((group) => card.value.relatedGroups.includes(group.id))
 })
 
-const listingGallery = computed(() => {
-  if (!card.value) return []
-
-  return card.value.saleCards
-})
+const listingGallery = computed(() => listings.value)
 
 const goCard = (cardId) => router.push(`/cards/${cardId}`)
-const goGroup = (groupId) => router.push(`/cards/group/${groupId}`)
-const goSaleCardNew = () => router.push({ path: '/saleCards/new', query: { cardId: card.value?.id } })
+const goSaleCardNew = () => router.push({ path: '/sale-cards/new', query: { cardId: card.value?.id } })
 const openPurchaseOverlay = () => { showPurchaseOverlay.value = true }
 const closePurchaseOverlay = () => { showPurchaseOverlay.value = false }
-const goSaleCardDetail = (saleCardId) => router.push(`/saleCards/${saleCardId}`)
+const goSaleCardDetail = (saleCardId) => router.push(`/sale-cards/${saleCardId}`)
 const goStore = (seller) => {
+  // If we have seller store ID in response, use it. For now, using mock.
   const store = getStoreByName(seller)
   if (store) router.push(`/stores/${store.id}`)
 }
-const toggleWatchlist = () => {
+
+const toggleWatchlist = async () => {
   if (!card.value) return
-  watchlistStore.toggle(card.value.id)
+  try {
+    await productService.toggleWatchlist(card.value.id)
+    // Manually toggle or refetch
+    card.value.isWatched = !card.value.isWatched
+    card.value.favoriteCount = card.value.isWatched 
+      ? (card.value.favoriteCount || 0) + 1 
+      : Math.max(0, (card.value.favoriteCount || 0) - 1)
+  } catch (error) {
+    console.error('Toggle watchlist failed:', error)
+    alert('관심 등록 처리에 실패했습니다. 로그인이 필요할 수 있습니다.')
+  }
 }
-const isWatched = computed(() => (card.value ? watchlistStore.hasCard(card.value.id) : false))
-const gradingLabel = (listing) => {
-  if (listing.gradingCompany === 'NONE') return '미감정'
-  return listing.gradingScore ? `${listing.gradingCompany} ${listing.gradingScore}` : listing.gradingCompany
-}
+const isWatched = computed(() => card.value?.isWatched || false)
+const favoriteCount = computed(() => card.value?.favoriteCount || 0)
+
 </script>
 
 <template>
@@ -74,7 +110,7 @@ const gradingLabel = (listing) => {
     <p>데이터를 불러오는 중입니다...</p>
   </div>
   <div v-else-if="card" class="detail-page container">
-    <section class="detail-hero mobile-shell">
+    <section class="detail-hero">
       <div class="visual-column">
         <div class="main-visual artwork">
           <img v-if="card.imageUrl" :src="card.imageUrl" :alt="card.cardName" class="detail-card-image" />
@@ -93,9 +129,7 @@ const gradingLabel = (listing) => {
       </div>
 
       <div class="info-column">
-        <p class="eyebrow">{{ card.setName }}</p>
         <h1>{{ card.cardName }}</h1>
-        <p class="summary">{{ card.summary }}</p>
 
         <div class="spec-grid">
           <div><span>종류</span><strong>{{ card.categoryName || '정보 없음' }}</strong></div>
@@ -114,75 +148,31 @@ const gradingLabel = (listing) => {
         <div class="price-panel">
           <div>
             <span>현재 최저가</span>
-            <strong>{{ card.lowestPrice }}</strong>
+            <strong>{{ card.lowestPrice?.toLocaleString() || '-' }}원</strong>
+          </div>
+          <div>
+            <span>현재 최고가</span>
+            <strong>{{ card.highestPrice?.toLocaleString() || '-' }}원</strong>
           </div>
           <div>
             <span>최근 거래가</span>
-            <strong>{{ card.recentPrice }}</strong>
+            <strong>{{ card.recentTradePrice?.toLocaleString() || '-' }}원</strong>
           </div>
           <div>
             <span>평균 거래가</span>
-            <strong>{{ card.averagePrice }}</strong>
+            <strong>{{ card.averagePrice ? Math.round(card.averagePrice).toLocaleString() : '-' }}원</strong>
           </div>
           <div>
-            <span>출품 수</span>
-            <strong>{{ card.saleCardCount }}개</strong>
+            <span>현재 출품 수</span>
+            <strong>{{ card.activeListingCount || 0 }}개</strong>
           </div>
         </div>
 
-        <div class="action-row">
-          <button type="button" class="primary" @click="openPurchaseOverlay">구매하기</button>
-          <button type="button" class="secondary" @click="goSaleCardNew">출품하기</button>
-          <button type="button" class="tertiary" @click="toggleWatchlist">
-            {{ isWatched ? '관심 해제' : '관심 등록' }}
-          </button>
-        </div>
       </div>
     </section>
 
-    <section class="detail-grid top-split">
-      <article class="detail-card">
-        <div class="section-head">
-          <div>
-            <h2>출품 목록</h2>
-          </div>
-        </div>
-        <div class="listing-gallery">
-          <article
-            v-for="item in listingGallery"
-            :key="`${item.seller}-${item.price}`"
-            class="listing-card"
-            role="button"
-            tabindex="0"
-            @click="goSaleCardDetail(item.id)"
-          >
-            <div class="listing-image">
-              <img :src="item.imageUrl" :alt="item.seller" />
-              <strong class="listing-price-overlay">{{ item.price }}</strong>
-              <span class="listing-grade-overlay">{{ gradingLabel(item) }}</span>
-            </div>
-            <div class="listing-copy">
-              <strong>{{ item.seller }}</strong>
-              <p>
-                <button type="button" class="seller-link" @click.stop="goStore(item.seller)">
-                  {{ item.seller }}
-                </button>
-                · {{ item.conditionGrade }} 등급
-              </p>
-              <span>{{ item.date }}</span>
-            </div>
-          </article>
-        </div>
-      </article>
-    </section>
-
-    <section class="detail-grid lower single-column">
-      <article class="detail-card chart-card">
-        <div class="section-head">
-          <div>
-            <h2>매매 시세</h2>
-          </div>
-        </div>
+    <section class="controls-section">
+      <div class="hero-controls">
         <div class="market-filter-row">
           <button
             v-for="filter in marketFilters"
@@ -195,6 +185,21 @@ const gradingLabel = (listing) => {
             {{ filter }}
           </button>
         </div>
+
+        <div class="action-row">
+          <button type="button" class="primary" @click="openPurchaseOverlay">구매하기</button>
+          <button type="button" class="secondary" @click="goSaleCardNew">출품하기</button>
+          <button type="button" class="tertiary" @click="toggleWatchlist">
+            <span class="heart-icon" :class="{ active: isWatched }">❤️</span>
+            {{ isWatched ? '관심 해제' : '관심 등록' }}
+            <small v-if="favoriteCount > 0">{{ favoriteCount }}</small>
+          </button>
+        </div>
+      </div>
+    </section>
+    
+    <section class="detail-grid lower single-column">
+      <article class="detail-card chart-card">
         <div class="chart-trade-layout">
           <div class="chart-box">
             <div class="chart-line"></div>
@@ -221,34 +226,42 @@ const gradingLabel = (listing) => {
       </article>
     </section>
 
-    <section class="detail-grid lower single-column">
+    <section class="detail-grid top-split">
       <article class="detail-card">
         <div class="section-head">
           <div>
-            <h2>같은 카드군의 다른 버전</h2>
+            <h2>출품 목록</h2>
           </div>
         </div>
-        <div class="related-grid related-grid-cards">
-          <button v-for="item in relatedCards" :key="item.id" type="button" class="related-card" @click="goCard(item.id)">
-            <strong>{{ item.name }}</strong>
-            <span>{{ item.setName }}</span>
-            <small>{{ item.lowestPrice }}</small>
-          </button>
-        </div>
-      </article>
-
-      <article class="detail-card">
-        <div class="section-head">
-          <div>
-            <h2>관련 카드군</h2>
-          </div>
-        </div>
-        <div class="related-grid">
-          <button v-for="item in relatedGroups" :key="item.id" type="button" class="related-card" @click="goGroup(item.id)">
-            <strong>{{ item.name }}</strong>
-            <span>{{ item.subtitle }}</span>
-            <small>{{ item.cardCount }}개 카드</small>
-          </button>
+        <div class="listing-gallery">
+          <article
+            v-for="item in listingGallery"
+            :key="item.id"
+            class="listing-card"
+            role="button"
+            tabindex="0"
+            @click="goSaleCardDetail(item.id)"
+          >
+            <div class="listing-image">
+              <img v-if="item.imageUrls && item.imageUrls.length > 0" :src="getImageUrl(item.imageUrls[0])" :alt="item.title" />
+              <div v-else class="no-img-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L15 15M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>No Image</span>
+              </div>
+              <strong class="listing-price-overlay">{{ item.price?.toLocaleString() }}원</strong>
+              <span class="listing-grade-overlay">{{ item.conditionGrade }} 등급</span>
+            </div>
+            <div class="listing-copy">
+              <strong>{{ item.title }}</strong>
+              <p>
+                {{ item.sellerNickname }}
+                · {{ item.conditionGrade }} 등급
+              </p>
+              <span>{{ new Date(item.createdAt).toLocaleDateString() }}</span>
+            </div>
+          </article>
         </div>
       </article>
     </section>
@@ -271,11 +284,16 @@ const gradingLabel = (listing) => {
             class="overlay-listing-card"
           >
             <div class="overlay-image">
-              <img :src="item.imageUrl" :alt="item.title">
+              <img v-if="item.imageUrls && item.imageUrls.length > 0" :src="getImageUrl(item.imageUrls[0])" :alt="item.title" />
+              <div v-else class="no-img-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L15 15M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
             </div>
             <div class="overlay-copy">
               <strong>{{ item.title }}</strong>
-              <p>{{ item.seller }} · {{ item.conditionGrade }} · {{ gradingLabel(item) }}</p>
+              <p>{{ item.seller }} · {{ item.conditionGrade }} 등급</p>
               <small>{{ item.description }}</small>
               <div class="overlay-meta">
                 <span>상태 {{ item.status }}</span>
@@ -295,14 +313,15 @@ const gradingLabel = (listing) => {
 
 <style scoped>
 .detail-page {
-  padding: 40px 0 80px;
+  padding: 80px 0 80px;
 }
 
 .detail-hero {
   display: grid;
   grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
   gap: 40px;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
+  align-items: stretch;
 }
 
 .detail-hero.mobile-shell {
@@ -320,8 +339,8 @@ const gradingLabel = (listing) => {
 
 .main-visual {
   width: 100%;
-  aspect-ratio: 1;
-  background: var(--color-panel-soft);
+  aspect-ratio: 0.71;
+  background: #f8f8f8;
   border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -388,11 +407,11 @@ const gradingLabel = (listing) => {
 }
 
 .info-column h1 {
-  margin: 0 0 16px;
-  font-size: 24px;
-  font-weight: 700;
+  margin: 0 0 24px;
+  font-size: 32px;
+  font-weight: 800;
   color: var(--color-text-strong);
-  line-height: 1.4;
+  line-height: 1.1;
 }
 
 .summary {
@@ -419,23 +438,43 @@ const gradingLabel = (listing) => {
   gap: 4px;
 }
 
+.spec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border-top: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+  margin-bottom: 24px;
+}
+
+.spec-grid > div {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+}
+
 .spec-grid span {
-  font-size: 12px;
+  background: var(--color-panel-soft);
+  padding: 12px;
+  font-size: 13px;
   color: var(--color-text-subtle);
+  font-weight: 600;
+  border-right: 1px solid var(--color-border);
 }
 
 .spec-grid strong {
-  font-size: 14px;
+  padding: 12px;
+  font-size: 13px;
   color: var(--color-text-strong);
+  font-weight: 700;
 }
 
 .price-panel {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  padding: 20px 0;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  padding: 24px 0;
   border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
   margin-bottom: 24px;
 }
 
@@ -443,62 +482,89 @@ const gradingLabel = (listing) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 4px 0;
 }
 
 .price-panel span {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-text-subtle);
 }
 
 .price-panel strong {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--color-text-strong);
   font-weight: 700;
 }
 
+.hero-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.controls-section {
+  margin-bottom: 48px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .action-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 12px;
 }
 
 .action-row button {
-  padding: 16px;
-  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  border-radius: 4px;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 15px;
   text-align: center;
   transition: opacity var(--transition-fast);
-}
-
-.action-row button:hover {
-  opacity: 0.8;
+  white-space: nowrap;
+  flex: 1;
 }
 
 .action-row .primary {
-  grid-column: span 2;
-  background: var(--color-primary);
-  color: var(--color-background-elevated);
-  border: 1px solid var(--color-primary);
+  flex: 2.2;
+  background: var(--color-text-strong);
+  color: var(--color-background);
+  border: 1px solid var(--color-text-strong);
 }
 
 .action-row .secondary {
-  background: var(--color-background-elevated);
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary);
+  flex: 1;
+  background: var(--color-background);
+  color: var(--color-text-strong);
+  border: 1px solid var(--color-border);
 }
 
 .action-row .tertiary {
-  background: var(--color-panel-soft);
+  flex: 1;
+  background: var(--color-background);
   color: var(--color-text-strong);
   border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.heart-icon {
+  filter: grayscale(1);
+  transition: transform 0.2s;
+}
+
+.heart-icon.active {
+  filter: grayscale(0);
+  transform: scale(1.2);
 }
 
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 40px;
-  margin-top: 60px;
+  margin-top: 24px;
 }
 
 .detail-grid.top-split {
@@ -542,6 +608,32 @@ const gradingLabel = (listing) => {
   border: 1px solid var(--color-border);
   background: var(--color-panel-soft);
   aspect-ratio: 1;
+}
+
+.no-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background-elevated);
+  color: var(--color-text-subtle);
+  gap: 8px;
+}
+
+.no-img-placeholder svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.5;
+}
+
+.no-img-placeholder span {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
 }
 
 .listing-image img {
@@ -599,8 +691,7 @@ const gradingLabel = (listing) => {
 .market-filter-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 18px;
+  gap: 8px;
 }
 
 .market-filter-chip {
@@ -670,43 +761,9 @@ const gradingLabel = (listing) => {
   font-size: 12px;
 }
 
-.related-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  align-items: stretch;
-}
-
-.related-grid-cards {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.related-card {
-  min-height: 148px;
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background-elevated);
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 8px;
-  transition: border-color var(--transition-fast);
-}
-
-.related-card:hover {
-  border-color: var(--color-primary);
-}
-
-.related-card strong {
-  font-size: 14px;
-  color: var(--color-text-strong);
-}
-
-.related-card span,
-.related-card small {
-  font-size: 12px;
+.trade-row span {
   color: var(--color-text-subtle);
+  font-size: 12px;
 }
 
 .purchase-overlay {
@@ -827,7 +884,17 @@ const gradingLabel = (listing) => {
   font-weight: 800;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
+  .hero-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .action-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .detail-hero,
   .detail-grid {
     grid-template-columns: 1fr;

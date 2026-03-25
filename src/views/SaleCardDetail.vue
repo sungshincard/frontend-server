@@ -1,13 +1,34 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getSaleCardById, getStoreByName } from '../data/catalog'
+import productService from '../services/productService'
+import { getImageUrl } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
 
-const listing = computed(() => getSaleCardById(route.params.saleCardId))
-const card = computed(() => listing.value?.card)
+const listing = ref(null)
+const isLoading = ref(true)
+
+const fetchListingDetail = async (id) => {
+  try {
+    isLoading.value = true
+    const response = await productService.getSaleCardDetail(id)
+    listing.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch listing detail:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  if (route.params.saleCardId) {
+    fetchListingDetail(route.params.saleCardId)
+  }
+})
+
+const card = computed(() => listing.value?.cardMaster)
 
 const goCard = () => {
   if (card.value) {
@@ -24,9 +45,8 @@ const goCheckout = () => {
 }
 
 const goStore = () => {
-  const store = getStoreByName(listing.value?.seller)
-  if (store) {
-    router.push(`/stores/${store.id}`)
+  if (listing.value?.sellerStoreId) {
+    router.push(`/stores/${listing.value.sellerStoreId}`)
   }
 }
 
@@ -49,49 +69,55 @@ const addComment = () => {
 </script>
 
 <template>
-  <div v-if="listing && card" class="listing-detail-page container">
+  <div v-if="isLoading" class="loading-state container">
+    <p>데이터를 불러오는 중입니다...</p>
+  </div>
+  <div v-else-if="listing && card" class="listing-detail-page container">
     <section class="listing-shell">
       <div class="visual-block">
         <button type="button" class="back-link" @click="goCard">카드 상세로 돌아가기</button>
-        <div class="listing-photo">
-          <img :src="listing.imageUrl" :alt="listing.title">
+        <div class="listing-photo-gallery">
+          <div v-for="(url, index) in listing.imageUrls" :key="index" class="listing-photo">
+            <img :src="getImageUrl(url)" :alt="listing.title">
+          </div>
+          <div v-if="!listing.imageUrls || listing.imageUrls.length === 0" class="listing-photo no-img">
+            <span>실물 사진 없음</span>
+          </div>
         </div>
       </div>
 
       <div class="info-block">
-        <p class="eyebrow">{{ card.setName }}</p>
+        <p class="eyebrow">{{ card.cardSetName }}</p>
         <h1>{{ listing.title }}</h1>
-        <p class="subcopy">{{ card.name }} · {{ card.cardNumber }} · {{ card.rarity }}</p>
+        <p class="subcopy">{{ card.cardName }} · {{ card.cardNumber }} · {{ card.rarity }}</p>
 
         <div class="price-line">
-          <strong>{{ listing.price }}</strong>
+          <strong>{{ listing.price?.toLocaleString() }}원</strong>
           <span class="grade-chip">{{ listing.conditionGrade }}</span>
         </div>
 
         <div class="seller-strip">
-          <button type="button" class="seller-link" @click="goStore">{{ listing.seller }}</button>
-          <small>{{ listing.date }} 등록</small>
+          <button type="button" class="seller-link" @click="goStore">{{ listing.sellerNickname }}</button>
+          <small>{{ new Date(listing.createdAt).toLocaleDateString() }} 등록</small>
         </div>
 
         <div class="trust-row">
-          <div><strong>실물 사진</strong><span>판매자 등록 이미지 기준</span></div>
+          <div><strong>실물 사진</strong><span>직접 촬영된 {{ listing.imageUrls?.length || 0 }}장</span></div>
           <div><strong>에스크로</strong><span>구매 확정 전 결제 보관</span></div>
           <div><strong>안심거래</strong><span>분쟁 정책 적용</span></div>
         </div>
 
         <div class="meta-table">
           <div><span>상태 등급</span><strong>{{ listing.conditionGrade }}</strong></div>
-          <div><span>감정사</span><strong>{{ listing.gradingCompany === 'NONE' ? '미감정' : listing.gradingCompany }}</strong></div>
-          <div><span>감정 점수</span><strong>{{ listing.gradingScore || '-' }}</strong></div>
           <div><span>출품 상태</span><strong>{{ listing.status }}</strong></div>
           <div><span>조회수</span><strong>{{ listing.viewCount }}</strong></div>
           <div><span>관심 수</span><strong>{{ listing.favoriteCount }}</strong></div>
-          <div><span>판매자</span><strong>{{ listing.seller }}</strong></div>
+          <div><span>판매자</span><strong>{{ listing.sellerNickname }}</strong></div>
         </div>
 
         <section class="description-box">
           <h2>상품 설명</h2>
-          <p>{{ listing.description }}</p>
+          <p>{{ listing.description || '상품 설명이 없습니다.' }}</p>
         </section>
 
         <section class="comment-box">
@@ -161,10 +187,24 @@ const addComment = () => {
   padding: 10px 16px;
 }
 
+.listing-photo-gallery {
+  display: grid;
+  gap: 12px;
+}
+
 .listing-photo {
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 20px;
   background: var(--color-panel-soft);
+  border: 1px solid var(--color-border);
+}
+
+.listing-photo.no-img {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
 }
 
 .listing-photo img {

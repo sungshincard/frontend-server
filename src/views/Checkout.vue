@@ -91,7 +91,7 @@ const goBack = () => {
             <strong>{{ listing?.title || card.name }}</strong>
             <span>{{ card.setName }} · {{ card.rarity }}</span>
             <small v-if="listing">
-              {{ listing.seller }} · {{ listing.conditionGrade }} · {{ listing.gradingCompany === 'NONE' ? '미감정' : listing.gradingCompany }}
+              {{ listing.seller }} · {{ listing.conditionGrade }} 등급
             </small>
             <small v-else>현재 최저가 {{ card.lowestPrice }} / 최근 거래가 {{ card.recentPrice }}</small>
           </div>
