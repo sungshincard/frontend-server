@@ -454,7 +454,7 @@ const favoriteCount = computed(() => card.value?.favoriteCount || 0)
 }
 
 .spec-grid span {
-  background: #f9f9f9;
+  background: var(--color-panel-soft);
   padding: 12px;
   font-size: 13px;
   color: var(--color-text-subtle);
@@ -527,22 +527,22 @@ const favoriteCount = computed(() => card.value?.favoriteCount || 0)
 
 .action-row .primary {
   flex: 2.2;
-  background: #18181b;
-  color: #ffffff;
-  border: 1px solid #18181b;
+  background: var(--color-text-strong);
+  color: var(--color-background);
+  border: 1px solid var(--color-text-strong);
 }
 
 .action-row .secondary {
   flex: 1;
-  background: #ffffff;
-  color: #18181b;
+  background: var(--color-background);
+  color: var(--color-text-strong);
   border: 1px solid var(--color-border);
 }
 
 .action-row .tertiary {
   flex: 1;
-  background: #ffffff;
-  color: #18181b;
+  background: var(--color-background);
+  color: var(--color-text-strong);
   border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
