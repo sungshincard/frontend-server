@@ -48,6 +48,7 @@
     - [o] `productService.js` 페이징 파라미터 지원 및 데이터 구조 대응
     - [o] **[New] 무한 스크롤 런타임 오류 및 감지 로직 최적화 (nextTick 및 중복 요청 방지)**
   - [o] **[New] 카드 탐색 필터 UI 버추얼 가이드 및 하이라이트(Active) 효과 적용**
+  - [o] **[New] 카드 검색 시 DB 전체 개수(count) 연동 및 표시 (`totalElements`)**
 - [o] **미등록 카드 요청 폼 (CardRequest)**
   - [o] 사용자가 플랫폼에 미등록 카드 추가를 요구할 수 있는 모달 폼 작성
   - [o] 관리자 처리 결과(Pending, Approved, Rejected) 내역 확인 화면 연동

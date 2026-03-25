@@ -7,7 +7,7 @@ const router = useRouter()
 const route = useRoute()
 
 const categoryTabs = ref(['전체', '포켓몬', '에너지', '트레이너스'])
-const sortOptions = ref(['최신순', '인기순', '최저가순', '최근 거래순'])
+const sortOptions = computed(() => metadata.value.sortOptions || ['최신순', '인기순', '최저가순', '최근 거래순'])
 
 const filterGroups = computed(() => {
   const groups = []
@@ -16,31 +16,31 @@ const filterGroups = computed(() => {
     groups.push({
       key: 'type',
       label: '타입',
-      chips: metadata.value.elementalTypes.map(t => t.id)
+      chips: ['', ...metadata.value.elementalTypes.map(t => t.id)]
     })
     groups.push({
       key: 'evolutionStage',
       label: '진화 단계',
-      chips: ['기본', '1진화', '2진화', 'V', 'VMAX', 'VSTAR', 'ex', '메가 ex', '라디언트']
+      chips: [
+        '',
+        ...metadata.value.evolutionStages
+          .map(s => s.name)
+          .filter(name => !['서포트', '포켓몬의 도구', '기본 에너지', '특수 에너지', '아이템', '스타디움'].includes(name))
+      ]
     })
   } else if (activeCategory.value === '에너지') {
     const energyCats = metadata.value.categories.filter(c => c.name.includes('ENERGY') && c.name !== 'ENERGY')
     groups.push({
       key: 'subType',
       label: '종류',
-      chips: energyCats.map(c => c.id)
-    })
-    groups.push({
-      key: 'type',
-      label: '타입',
-      chips: metadata.value.elementalTypes.map(t => t.id)
+      chips: ['', ...energyCats.map(c => c.id)]
     })
   } else if (activeCategory.value === '트레이너스') {
     const trainerCats = metadata.value.categories.filter(c => !c.name.includes('ENERGY') && c.name !== 'POKEMON' && c.name !== 'ENERGY' && c.name !== 'TRAINER')
     groups.push({
       key: 'subType',
       label: '종류',
-      chips: trainerCats.map(c => c.id)
+      chips: ['', ...trainerCats.map(c => c.id)]
     })
   }
 
@@ -48,6 +48,7 @@ const filterGroups = computed(() => {
 })
 
 const getFilterLabel = (key, value) => {
+  if (value === '') return '전체'
   if (key === 'type') {
     return metadata.value.elementalTypes.find(t => t.id.toString() === value.toString())?.displayName || value
   }
@@ -68,7 +69,9 @@ const activeFilters = ref({
 })
 
 const toggleFilter = (key, value) => {
-  if (activeFilters.value[key] === value) {
+  if (value === '') {
+    activeFilters.value[key] = ''
+  } else if (activeFilters.value[key] === value) {
     activeFilters.value[key] = ''
   } else {
     activeFilters.value[key] = value
@@ -79,7 +82,9 @@ const toggleFilter = (key, value) => {
 const metadata = ref({
   categories: [],
   elementalTypes: [],
-  cardSets: []
+  cardSets: [],
+  evolutionStages: [],
+  sortOptions: []
 })
 
 const fetchMetadata = async () => {
@@ -105,6 +110,7 @@ const searchParams = ref({
 const activePage = ref(0)
 const pageSize = 20
 const hasMore = ref(true)
+const totalCards = ref(0)
 const observerTarget = ref(null)
 
 const fetchCards = async (isLoadMore = false) => {
@@ -117,9 +123,23 @@ const fetchCards = async (isLoadMore = false) => {
 
   try {
     isLoading.value = true
+    const getCategoryId = () => {
+      if (activeFilters.value.subType) return activeFilters.value.subType;
+      if (activeCategory.value === '트레이너스') {
+        return metadata.value.categories.find(c => c.name === 'TRAINER')?.id || 5;
+      }
+      if (activeCategory.value === '에너지') {
+        return metadata.value.categories.find(c => c.name === 'ENERGY')?.id || 2;
+      }
+      if (activeCategory.value === '포켓몬') {
+        return metadata.value.categories.find(c => c.name === 'POKEMON')?.id || 1;
+      }
+      return null;
+    };
+
     const params = {
       gameType: 'POKEMON',
-      categoryId: activeFilters.value.subType || (activeCategory.value === '트레이너스' ? 3 : (activeCategory.value === '에너지' ? 2 : null)),
+      categoryId: getCategoryId(),
       cardSetId: searchParams.value.cardSetId,
       cardName: searchParams.value.cardName,
       cardNumber: searchParams.value.cardNumber,
@@ -130,7 +150,8 @@ const fetchCards = async (isLoadMore = false) => {
       size: pageSize
     }
     const response = await productService.searchCards(params)
-    const newItems = response.data || []
+    const newItems = response.data.content || []
+    totalCards.value = response.data.totalElements || 0
     
     if (loadMore) {
       cards.value = [...cards.value, ...newItems]
@@ -138,7 +159,7 @@ const fetchCards = async (isLoadMore = false) => {
       cards.value = newItems
     }
 
-    hasMore.value = newItems.length === pageSize
+    hasMore.value = !response.data.last
     activePage.value++
   } catch (error) {
     console.error('Failed to fetch cards:', error)
@@ -150,7 +171,12 @@ const fetchCards = async (isLoadMore = false) => {
 const handleRouteQuery = () => {
   const { pokemonId, pokemonName, category } = route.query
   if (category) {
-    activeCategory.value = category
+    const categoryMap = {
+      'pokemon': '포켓몬',
+      'trainers': '트레이너스',
+      'energy': '에너지'
+    }
+    activeCategory.value = categoryMap[category.toLowerCase()] || category
   }
   if (pokemonId) {
     searchParams.value.pokemonId = parseInt(pokemonId)
@@ -161,8 +187,8 @@ const handleRouteQuery = () => {
   }
 }
 
-onMounted(() => {
-  fetchMetadata();
+onMounted(async () => {
+  await fetchMetadata();
   handleRouteQuery();
   fetchCards();
 
@@ -285,7 +311,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
       <div class="section-head">
         <div>
           <h2>카드 목록</h2>
-          <p>{{ visibleCards.length }}개의 카드를 확인할 수 있습니다.</p>
+          <p>{{ totalCards }}개의 카드를 확인할 수 있습니다.</p>
         </div>
       </div>
 
@@ -466,8 +492,6 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 }
 
 .filter-top-row,
-.tab-row,
-.chip-grid,
 .section-head {
   display: flex;
   align-items: center;
@@ -476,8 +500,20 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
 
 .tab-row,
 .chip-grid {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.tab-row {
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 14px;
+}
+
+.chip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
 }
 
 .tab-chip,
@@ -490,6 +526,15 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.tab-chip {
+  min-width: 120px;
+}
+
+.filter-chip {
+  width: 100%;
 }
 
 .tab-chip.active {
