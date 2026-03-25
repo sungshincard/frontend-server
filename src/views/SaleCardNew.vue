@@ -24,6 +24,17 @@ const form = ref({
   imageUrls: []
 })
 
+const formattedPrice = computed({
+  get: () => {
+    if (!form.value.price) return ''
+    return Number(form.value.price).toLocaleString()
+  },
+  set: (val) => {
+    const numericValue = val.replace(/[^0-9]/g, '')
+    form.value.price = numericValue
+  }
+})
+
 const conditionOptions = [
   { value: 'S', label: '새 상품(미사용)' },
   { value: 'A', label: '사용감 없음' },
@@ -163,14 +174,23 @@ const goBack = () => {
             />
           </div>
         </div>
+      </div>
 
+      <div class="form-section">
+        <div class="section-head">
+          <h2>상품명</h2>
+        </div>
         <div class="form-grid single">
           <label class="field">
-            <span>상품명</span>
             <input v-model="form.title" type="text" placeholder="상품명을 입력해 주세요." maxlength="40">
           </label>
         </div>
+      </div>
 
+      <div class="form-section">
+        <div class="section-head">
+          <h2>카드 상세 정보</h2>
+        </div>
         <div class="form-grid two">
           <div class="field static-field">
             <span>카드명</span>
@@ -218,23 +238,45 @@ const goBack = () => {
         <div class="section-head">
           <h2>가격</h2>
         </div>
-        <div class="form-grid two">
-          <label class="field">
-            <span>판매 가격</span>
-            <div class="price-input">
-              <input v-model="form.price" type="text" inputmode="numeric" placeholder="가격 입력">
-              <small>원</small>
+        <div class="price-layout">
+          <div class="price-input-area">
+            <label class="field">
+              <div class="price-input-wrapper">
+                <input v-model="formattedPrice" type="text" inputmode="numeric" placeholder="가격을 입력해 주세요.">
+                <span class="unit">원</span>
+              </div>
+            </label>
+          </div>
+          
+          <div class="price-reference-area">
+            <div class="reference-title">실시간 시세 참고</div>
+            <div class="reference-grid">
+              <div class="reference-item">
+                <span class="label">최저가</span>
+                <strong class="value">{{ card.lowestPrice ? card.lowestPrice.toLocaleString() + '원' : '-' }}</strong>
+              </div>
+              <div class="reference-item">
+                <span class="label">최고가</span>
+                <strong class="value">{{ card.highestPrice ? card.highestPrice.toLocaleString() + '원' : '-' }}</strong>
+              </div>
+              <div class="reference-item">
+                <span class="label">최근 거래가</span>
+                <strong class="value">{{ card.recentTradePrice ? card.recentTradePrice.toLocaleString() + '원' : '-' }}</strong>
+              </div>
+              <div class="reference-item">
+                <span class="label">평균 거래가</span>
+                <strong class="value">{{ card.averagePrice ? Math.round(card.averagePrice).toLocaleString() + '원' : '-' }}</strong>
+              </div>
+              <div class="reference-item">
+                <span class="label">현재 출품 수</span>
+                <strong class="value">{{ card.activeListingCount || 0 }}건</strong>
+              </div>
             </div>
-          </label>
-          <div class="field static-field">
-            <span>시세 참고</span>
-            <strong>최저가 {{ card.lowestPrice || '-' }}</strong>
-            <small>평균 거래가 {{ card.averagePrice || '-' }}</small>
           </div>
         </div>
       </div>
 
-      <div class="form-section">
+      <div v-if="isEditing" class="form-section">
         <div class="section-head">
           <h2>출품 상태</h2>
         </div>
@@ -455,6 +497,7 @@ const goBack = () => {
 
 .condition-list {
   display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
 }
 
@@ -462,10 +505,13 @@ const goBack = () => {
   display: flex;
   gap: 10px;
   align-items: center;
-  padding: 14px 16px;
+  justify-content: center;
+  padding: 14px 10px;
   border-radius: 16px;
   color: var(--color-text-strong);
   font-weight: 600;
+  cursor: pointer;
+  text-align: center;
 }
 
 .condition-row.active {
@@ -491,20 +537,93 @@ const goBack = () => {
   color: #2c2407;
 }
 
-.price-input {
+.price-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  padding: 0 14px;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
 }
 
-.price-input input {
+.price-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--color-background-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 0 24px;
+  height: 110px;
+  transition: border-color 0.2s;
+}
+
+.price-input-wrapper:focus-within {
+  border-color: var(--color-primary);
+}
+
+.price-input-wrapper input {
   border: 0;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 14px 0;
+  font-size: 1.1rem;
   font-weight: 800;
   background: transparent;
+}
+
+.price-input-wrapper .unit {
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-left: 8px;
+}
+
+.price-reference-area {
+  background: var(--color-background-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 16px 20px;
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.reference-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.reference-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.reference-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.reference-item .label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reference-item .value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-strong);
+}
+
+.stat-item.highlight .value {
+  color: var(--color-primary);
+  font-size: 1.15rem;
 }
 
 .submit-row {

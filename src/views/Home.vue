@@ -1,7 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { latestSaleCards, recentTrades, risingCards } from '../data/catalog'
+import productService from '../services/productService'
+import { getImageUrl } from '../services/api'
 
 const router = useRouter()
 
@@ -19,19 +20,42 @@ const slides = [
 ]
 
 const currentSlide = ref(0)
+const recentSaleCards = ref([])
+const newCards = ref([])
+const trendingCards = ref([])
+const loading = ref(true)
 
-const collections = [
-  { title: '새로 출품된 카드', items: latestSaleCards },
-  { title: '새로 출시된 카드', items: recentTrades },
-  { title: '현재 시세보다 저렴한 카드', items: latestSaleCards.slice().reverse() },
-]
+const collections = computed(() => [
+  { title: '새로 출품된 카드', items: recentSaleCards.value, type: 'sale' },
+  { title: '새로 등록된 카드', items: newCards.value, type: 'master' },
+])
 
 const spotlightItems = computed(() =>
-  risingCards.map((item) => ({
+  trendingCards.value.map((item) => ({
     ...item,
     label: '현재 주목받는 카드',
   }))
 )
+
+onMounted(async () => {
+  try {
+    const [saleRes, masterRes] = await Promise.all([
+      productService.getRecentSaleCards(),
+      productService.getRecentCards()
+    ]);
+    
+    recentSaleCards.value = saleRes.data || [];
+    console.log(recentSaleCards.value);
+    newCards.value = masterRes.data || [];
+    
+    // For spotlight, let's just use first 3 new cards if trending is not separate
+    trendingCards.value = (newCards.value || []).slice(0, 3);
+  } catch (error) {
+    console.error('Failed to fetch home data:', error);
+  } finally {
+    loading.value = false;
+  }
+})
 
 const nextSlide = () => {
   currentSlide.value = (currentSlide.value + 1) % slides.length
@@ -42,6 +66,8 @@ const prevSlide = () => {
 }
 
 const goCards = () => router.push('/cards')
+const goCardDetail = (id) => router.push(`/cards/${id}`)
+const goSaleDetail = (id) => router.push(`/sale-cards/${id}`)
 const activeSlide = computed(() => slides[currentSlide.value])
 </script>
 
@@ -89,11 +115,19 @@ const activeSlide = computed(() => slides[currentSlide.value])
           </div>
         </div>
 
-        <div class="spotlight-grid">
-          <article v-for="item in spotlightItems" :key="item.name" class="spotlight-card">
-            <div class="spotlight-art"></div>
-            <strong>{{ item.name }}</strong>
-            <span>{{ item.change }}</span>
+        <div v-if="loading" class="loading-placeholder">로딩 중...</div>
+        <div v-else class="spotlight-grid">
+          <article 
+            v-for="item in spotlightItems" 
+            :key="item.id" 
+            class="spotlight-card"
+            @click="goCardDetail(item.id)"
+          >
+            <div class="spotlight-art">
+              <img v-if="item.imageUrl" :src="getImageUrl(item.imageUrl)" :alt="item.cardName">
+            </div>
+            <strong>{{ item.cardName }}</strong>
+            <span class="rarity">{{ item.rarity }}</span>
           </article>
         </div>
       </div>
@@ -108,17 +142,23 @@ const activeSlide = computed(() => slides[currentSlide.value])
           </div>
         </div>
 
-        <div class="product-row">
+        <div v-if="loading" class="loading-placeholder">로딩 중...</div>
+        <div v-else class="product-row">
           <button
             v-for="item in section.items"
-            :key="`${section.title}-${item.name}`"
+            :key="item.id"
             type="button"
             class="product-card"
-            @click="goCards"
+            @click="section.type === 'sale' ? goSaleDetail(item.id) : goCardDetail(item.id)"
           >
-            <div class="product-art"></div>
-            <strong>{{ item.name }}</strong>
-            <span>{{ item.price }}</span>
+            <div class="product-art">
+              <!-- If it's a SaleCard, it might have its own images or use CardMaster's -->
+              <img v-if="section.type === 'sale'" :src="getImageUrl(item.imageUrls?.[0] || item.cardMaster?.imageUrl)" :alt="item.title">
+              <img v-else :src="getImageUrl(item.imageUrl)" :alt="item.cardName">
+            </div>
+            <strong>{{ section.type === 'sale' ? item.title : item.cardName }}</strong>
+            <span v-if="section.type === 'sale'" class="price">{{ item.price?.toLocaleString() }}원</span>
+            <span v-else class="rarity">{{ item.rarity }}</span>
           </button>
         </div>
       </article>
@@ -269,8 +309,21 @@ const activeSlide = computed(() => slides[currentSlide.value])
   margin-top: 40px;
 }
 
+.collection-section {
+  display: grid;
+  gap: 40px;
+}
+
+.collection-card {
+  padding: 32px;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel);
+}
+
 .spotlight-section {
   padding: 32px;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel);
 }
 
 .section-head h2 {
@@ -288,10 +341,29 @@ const activeSlide = computed(() => slides[currentSlide.value])
   gap: 24px;
 }
 
-.spotlight-card {
+.product-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.spotlight-card,
+.product-card {
   padding: 20px;
   border: 1px solid var(--color-border);
   background: var(--color-background-elevated);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+  text-align: left;
+}
+
+.product-card {
+  padding: 16px;
+}
+
+.spotlight-card:hover,
+.product-card:hover {
+  border-color: var(--color-primary);
 }
 
 .spotlight-card strong,
@@ -303,53 +375,58 @@ const activeSlide = computed(() => slides[currentSlide.value])
   margin-bottom: 4px;
 }
 
-.spotlight-card span {
-  color: var(--color-accent);
+.rarity,
+.price {
   font-weight: 700;
   font-size: 14px;
+}
+
+.rarity {
+  color: var(--color-text-muted);
+}
+
+.price {
+  color: var(--color-accent);
 }
 
 .spotlight-art,
 .product-art {
   background: var(--color-background-elevated);
   border: 1px solid var(--color-border);
-}
-
-.spotlight-art {
-  min-height: 240px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 16px;
 }
 
-.collection-section {
-  display: grid;
-  gap: 40px;
-}
-
-.collection-card {
-  padding: 32px;
-}
-
-.product-row {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
-}
-
-.product-card {
-  text-align: left;
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background-elevated);
-  transition: border-color var(--transition-fast);
-}
-
-.product-card:hover {
-  border-color: var(--color-primary);
+.spotlight-art {
+  height: 240px;
 }
 
 .product-art {
-  min-height: 200px;
+  height: 200px;
   margin-bottom: 12px;
+}
+
+.spotlight-art img,
+.product-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.spotlight-card:hover .spotlight-art img,
+.product-card:hover .product-art img {
+  transform: scale(1.05);
+}
+
+.loading-placeholder {
+  padding: 40px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-weight: 600;
 }
 
 @media (max-width: 1100px) {

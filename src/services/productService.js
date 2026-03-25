@@ -9,6 +9,10 @@ const productService = {
   getCardDetail(id) {
     return apiClient.get(`/v1/card-masters/${id}`);
   },
+
+  getRecentCards() {
+    return apiClient.get('/v1/card-masters/recent');
+  },
   
   // Pokemon APIs
   getPokemons(params = {}) {
@@ -31,6 +35,10 @@ const productService = {
 
   getSaleCardDetail(id) {
     return apiClient.get(`/v1/sale-cards/${id}`);
+  },
+
+  getRecentSaleCards() {
+    return apiClient.get('/v1/sale-cards/recent');
   },
 
   createSaleCard(data) {
