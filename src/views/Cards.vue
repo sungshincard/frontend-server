@@ -140,12 +140,12 @@ const fetchCards = async (isLoadMore = false) => {
     const params = {
       gameType: 'POKEMON',
       categoryId: getCategoryId(),
-      cardSetId: searchParams.value.cardSetId,
-      cardName: searchParams.value.cardName,
-      cardNumber: searchParams.value.cardNumber,
-      elementalTypeId: activeFilters.value.type,
-      evolutionStage: activeFilters.value.evolutionStage,
-      pokemonId: searchParams.value.pokemonId,
+      cardSetId: searchParams.value.cardSetId || null,
+      cardName: searchParams.value.cardName || null,
+      cardNumber: searchParams.value.cardNumber || null,
+      elementalTypeId: activeFilters.value.type || null,
+      evolutionStage: activeFilters.value.evolutionStage || null,
+      pokemonId: searchParams.value.pokemonId || null,
       page: activePage.value,
       size: pageSize
     }
@@ -323,7 +323,7 @@ const goCard = (cardId) => router.push(`/cards/${cardId}`)
           @click="goCard(card.id)"
         >
           <div class="card-thumb artwork">
-            <img v-if="card.imageUrl" :src="card.imageUrl" :alt="card.cardName" class="card-image" />
+            <img v-if="card.imageUrl" :src="card.imageUrl" :alt="card.cardName" class="card-image" referrerpolicy="no-referrer" />
             <div v-else class="card-shell">
               <div class="card-shell-head">
                 <span>{{ card.cardName }}</span>

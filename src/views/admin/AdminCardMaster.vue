@@ -20,13 +20,14 @@ const illustratorOptions = ref([]);
 
 const form = ref({
   pokemonId: null,
-  name: '',
+  cardName: '',
   cardNumber: '',
   rarityId: null,
   imageUrl: '',
   cardSetId: null,
   gameType: 'POKEMON',
   language: 'KOREAN',
+  categoryId: null,
   elementalTypeId: null,
   hp: null,
   evolutionStageId: null,
@@ -35,17 +36,26 @@ const form = ref({
   expansionCodeId: null
 });
 
+const categoryOptions = ref([]);
+
 const fetchMetadata = async () => {
   try {
     const res = await productService.getMetadata(form.value.gameType);
     const metadata = res.data;
     sets.value = metadata.cardSets || [];
+    categoryOptions.value = metadata.categories || [];
     rarityOptions.value = metadata.rarities || [];
     attributeOptions.value = metadata.elementalTypes || [];
     stageOptions.value = metadata.evolutionStages || [];
     blockOptions.value = metadata.blocks || [];
     expansionCodeOptions.value = metadata.expansionCodes || [];
     illustratorOptions.value = metadata.illustrators || [];
+
+    // Auto-select POKEMON category if empty
+    if (!form.value.categoryId && categoryOptions.value.length > 0) {
+      const pokemonCat = categoryOptions.value.find(c => c.name === 'POKEMON');
+      if (pokemonCat) form.value.categoryId = pokemonCat.id;
+    }
   } catch (error) {
     console.error('Failed to fetch metadata', error);
   }
@@ -59,7 +69,7 @@ const searchPokemon = async (query) => {
   isSearching.value = true;
   try {
     const res = await productService.getPokemons({ name: query });
-    pokemonList.value = res.data.data || res.data; // Handle different wrapper styles
+    pokemonList.value = res.data.content || []; // res.data is the Page object
   } catch (error) {
     console.error('Pokemon search failed', error);
   } finally {
@@ -69,14 +79,15 @@ const searchPokemon = async (query) => {
 
 const selectPokemon = (p) => {
   form.value.pokemonId = p.id;
-  form.value.name = p.name + ' ';
+  form.value.cardName = p.name + ' ';
   // Optional: auto-select attribute if present in p
   pokemonList.value = [];
   searchQuery.value = p.name;
+  activeIndex.value = -1;
 };
 
 const handleSubmit = async () => {
-  if (!form.value.pokemonId || !form.value.name || !form.value.cardSetId) {
+  if (!form.value.pokemonId || !form.value.cardName || !form.value.cardSetId || !form.value.cardNumber) {
     toast.warning('필수 정보를 모두 입력해주세요.');
     return;
   }
@@ -97,13 +108,14 @@ const handleSubmit = async () => {
 const resetForm = () => {
   form.value = {
     pokemonId: null,
-    name: '',
+    cardName: '',
     cardNumber: '',
     rarityId: null,
     imageUrl: '',
     cardSetId: null,
     gameType: 'POKEMON',
     language: 'KOREAN',
+    categoryId: null,
     elementalTypeId: null,
     hp: null,
     evolutionStageId: null,
@@ -112,20 +124,60 @@ const resetForm = () => {
     expansionCodeId: null
   };
   searchQuery.value = '';
+  // Re-fetch default category if needed
+  if (categoryOptions.value.length > 0) {
+    const pokemonCat = categoryOptions.value.find(c => c.name === 'POKEMON');
+    if (pokemonCat) form.value.categoryId = pokemonCat.id;
+  }
 };
 
 onMounted(() => {
   fetchMetadata();
 });
 
-watch(searchQuery, (newVal) => {
-  const handler = setTimeout(() => {
-    if (newVal && newVal !== form.value.name.trim()) {
+let searchTimeout = null;
+const handleInput = (e) => {
+  const newVal = e.target.value;
+  searchQuery.value = newVal;
+
+  if (!newVal) {
+    pokemonList.value = [];
+    isSearching.value = false;
+    if (searchTimeout) clearTimeout(searchTimeout);
+    return;
+  }
+
+  if (searchTimeout) clearTimeout(searchTimeout);
+  
+  searchTimeout = setTimeout(() => {
+    if (newVal && newVal !== form.value.cardName.trim()) {
       searchPokemon(newVal);
     }
-  }, 300);
-  return () => clearTimeout(handler);
-});
+  }, 200);
+};
+
+const activeIndex = ref(-1);
+const handleBlur = () => {
+  setTimeout(() => {
+    pokemonList.value = [];
+    activeIndex.value = -1;
+  }, 200);
+};
+const onKeydown = (e) => {
+  if (pokemonList.value.length === 0) return;
+  if (e.key === 'ArrowDown') {
+    activeIndex.value = (activeIndex.value + 1) % pokemonList.value.length;
+  } else if (e.key === 'ArrowUp') {
+    activeIndex.value = (activeIndex.value - 1 + pokemonList.value.length) % pokemonList.value.length;
+  } else if (e.key === 'Enter') {
+    if (activeIndex.value >= 0) {
+      selectPokemon(pokemonList.value[activeIndex.value]);
+      e.preventDefault();
+    }
+  } else if (e.key === 'Escape') {
+    pokemonList.value = [];
+  }
+};
 </script>
 
 <template>
@@ -137,6 +189,7 @@ watch(searchQuery, (newVal) => {
       </div>
       <div class="header-badges">
         <span class="badge secondary">Total Cards: 1,240</span>
+        <span class="req-legend"><span class="req ">*</span> 필수 입력 항목</span>
       </div>
     </header>
 
@@ -147,7 +200,7 @@ watch(searchQuery, (newVal) => {
           <aside class="form-preview-area">
             <div class="image-preview-container">
               <div v-if="form.imageUrl" class="preview-img-wrapper">
-                <img :src="form.imageUrl" alt="Preview" />
+                <img :src="form.imageUrl" alt="Preview" referrerpolicy="no-referrer" />
               </div>
               <div v-else class="preview-placeholder">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -174,7 +227,7 @@ watch(searchQuery, (newVal) => {
           <div class="form-fields-area">
             <section class="form-section">
               <h4 class="section-badge">Step 1. 기본 분류 정보</h4>
-              <div class="row-3">
+              <div class="row-4">
                 <div class="input-group">
                   <label>게임 타입 <span class="req">*</span></label>
                   <select v-model="form.gameType">
@@ -191,14 +244,21 @@ watch(searchQuery, (newVal) => {
                     <option value="ENGLISH">영어</option>
                   </select>
                 </div>
+                <div class="input-group">
+                  <label>카테고리 <span class="req">*</span></label>
+                  <select v-model="form.categoryId" required>
+                    <option v-for="c in categoryOptions" :key="c.id" :value="c.id">{{ c.displayName }}</option>
+                  </select>
+                </div>
                 <div class="input-group search-wrapper">
                   <label>포켓몬 검색 <span class="req">*</span></label>
                   <div class="search-input-box">
-                    <input type="text" v-model="searchQuery" placeholder="이름 검색..." required />
+                    <input type="text" :value="searchQuery" @input="handleInput" placeholder="이름 검색..." required @keydown="onKeydown" @blur="handleBlur" />
                     <svg v-if="isSearching" class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
                   </div>
-                  <ul v-if="pokemonList.length > 0" class="dropdown-list">
-                    <li v-for="p in pokemonList" :key="p.id" @click="selectPokemon(p)">
+                  <ul v-if="pokemonList.length > 0 || isSearching" class="dropdown-list">
+                    <li v-if="isSearching" class="list-notice">Searching...</li>
+                    <li v-for="(p, idx) in pokemonList" :key="p.id" :class="{ active: idx === activeIndex }" @mousedown="selectPokemon(p)">
                       {{ p.name }} <small>#{{ p.id }}</small>
                     </li>
                   </ul>
@@ -211,7 +271,7 @@ watch(searchQuery, (newVal) => {
               <div class="row-2">
                 <div class="input-group full">
                   <label>카드 정식 명칭 <span class="req">*</span></label>
-                  <input type="text" v-model="form.name" placeholder="예: 리자몽 ex SAR" required />
+                  <input type="text" v-model="form.cardName" placeholder="예: 리자몽 ex SAR" required />
                 </div>
               </div>
               <div class="row-2">
@@ -223,8 +283,8 @@ watch(searchQuery, (newVal) => {
                   </select>
                 </div>
                 <div class="input-group">
-                  <label>카드 번호</label>
-                  <input type="text" v-model="form.cardNumber" placeholder="예: 201/190" />
+                  <label>카드 번호 <span class="req">*</span></label>
+                  <input type="text" v-model="form.cardNumber" placeholder="예: 201/190" required />
                 </div>
               </div>
               <div class="row-3">
@@ -393,13 +453,15 @@ watch(searchQuery, (newVal) => {
   display: inline-block;
 }
 
-.row-2, .row-3 { display: grid; gap: 20px; margin-bottom: 20px; }
+.row-2, .row-3, .row-4 { display: grid; gap: 20px; margin-bottom: 20px; }
 .row-2 { grid-template-columns: 1fr 1fr; }
 .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
 
 .input-group { display: flex; flex-direction: column; gap: 8px; }
 .input-group label { font-size: 13px; font-weight: 700; color: var(--color-text-muted); }
-.req { color: #ef4444; }
+.req { color: #ef4444; margin-left: 2px; }
+.req-legend { font-size: 12px; color: var(--color-text-muted); margin-left: 16px; font-weight: 600; }
 
 input, select {
   padding: 12px 16px;
@@ -447,8 +509,9 @@ input:focus, select:focus {
   align-items: center;
 }
 
-.dropdown-list li:hover { background-color: var(--color-panel-soft); color: var(--color-primary); }
+.dropdown-list li:hover, .dropdown-list li.active { background-color: var(--color-panel-soft); color: var(--color-primary); }
 .dropdown-list li small { color: var(--color-text-subtle); }
+.list-notice { padding: 12px 16px; font-size: 13px; color: var(--color-text-muted); text-align: center; font-style: italic; }
 
 .form-footer {
   display: flex;
