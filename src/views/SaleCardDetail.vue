@@ -81,8 +81,6 @@ const addComment = () => {
 
         <div class="meta-table">
           <div><span>상태 등급</span><strong>{{ listing.conditionGrade }}</strong></div>
-          <div><span>감정사</span><strong>{{ listing.gradingCompany === 'NONE' ? '미감정' : listing.gradingCompany }}</strong></div>
-          <div><span>감정 점수</span><strong>{{ listing.gradingScore || '-' }}</strong></div>
           <div><span>출품 상태</span><strong>{{ listing.status }}</strong></div>
           <div><span>조회수</span><strong>{{ listing.viewCount }}</strong></div>
           <div><span>관심 수</span><strong>{{ listing.favoriteCount }}</strong></div>

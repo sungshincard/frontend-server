@@ -63,10 +63,7 @@ const toggleWatchlist = () => {
   watchlistStore.toggle(card.value.id)
 }
 const isWatched = computed(() => (card.value ? watchlistStore.hasCard(card.value.id) : false))
-const gradingLabel = (listing) => {
-  if (listing.gradingCompany === 'NONE') return '미감정'
-  return listing.gradingScore ? `${listing.gradingCompany} ${listing.gradingScore}` : listing.gradingCompany
-}
+
 </script>
 
 <template>
@@ -159,14 +156,12 @@ const gradingLabel = (listing) => {
             <div class="listing-image">
               <img :src="item.imageUrl" :alt="item.seller" />
               <strong class="listing-price-overlay">{{ item.price }}</strong>
-              <span class="listing-grade-overlay">{{ gradingLabel(item) }}</span>
+              <span class="listing-grade-overlay">{{ item.conditionGrade }} 등급</span>
             </div>
             <div class="listing-copy">
               <strong>{{ item.seller }}</strong>
               <p>
-                <button type="button" class="seller-link" @click.stop="goStore(item.seller)">
-                  {{ item.seller }}
-                </button>
+                {{ item.seller }}
                 · {{ item.conditionGrade }} 등급
               </p>
               <span>{{ item.date }}</span>
@@ -275,7 +270,7 @@ const gradingLabel = (listing) => {
             </div>
             <div class="overlay-copy">
               <strong>{{ item.title }}</strong>
-              <p>{{ item.seller }} · {{ item.conditionGrade }} · {{ gradingLabel(item) }}</p>
+              <p>{{ item.seller }} · {{ item.conditionGrade }} 등급</p>
               <small>{{ item.description }}</small>
               <div class="overlay-meta">
                 <span>상태 {{ item.status }}</span>

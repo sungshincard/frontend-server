@@ -12,9 +12,6 @@ const cardId = computed(() => editingListing.value?.cardId || route.query.cardId
 const card = computed(() => editingListing.value?.card || getCardById(cardId.value))
 
 const condition = ref('A')
-const grading = ref('NONE')
-const gradingScore = ref(editingListing.value?.gradingScore || '')
-const certificationNo = ref('')
 const title = ref(editingListing.value?.title || card.value?.name || '')
 const description = ref(editingListing.value?.description || '')
 const price = ref(editingListing.value?.price?.replace(/[^0-9]/g, '') || card.value?.lowestPrice?.replace(/[^0-9]/g, '') || '189000')
@@ -22,7 +19,6 @@ const listingStatus = ref(editingListing.value?.status || 'ACTIVE')
 
 if (editingListing.value) {
   condition.value = editingListing.value.conditionGrade
-  grading.value = editingListing.value.gradingCompany
 }
 
 const conditionOptions = [
@@ -33,7 +29,6 @@ const conditionOptions = [
   { value: 'D', label: '하자 있음' },
 ]
 
-const gradingOptions = ['NONE', 'PSA', 'BGS', 'CGC']
 const listingStatuses = ['ACTIVE', 'RESERVED', 'SOLD', 'HIDDEN']
 
 const goBack = () => {
@@ -130,33 +125,6 @@ const goBack = () => {
         </div>
       </div>
 
-      <div class="form-section">
-        <div class="section-head">
-          <h2>감정 여부</h2>
-        </div>
-        <div class="chip-row">
-          <button
-            v-for="item in gradingOptions"
-            :key="item"
-            type="button"
-            class="select-chip"
-            :class="{ active: grading === item }"
-            @click="grading = item"
-          >
-            {{ item === 'NONE' ? '미감정' : item }}
-          </button>
-        </div>
-        <div class="form-grid two detail-grid">
-          <label class="field">
-            <span>감정 점수</span>
-            <input v-model="gradingScore" type="text" placeholder="예: 10 / 9.5">
-          </label>
-          <label class="field">
-            <span>인증번호</span>
-            <input v-model="certificationNo" type="text" placeholder="예: PSA12345678">
-          </label>
-        </div>
-      </div>
 
       <div class="form-section">
         <div class="section-head">
