@@ -478,7 +478,7 @@ const handlePayment = async () => {
 .payment-chip.active {
   background: var(--color-primary);
   border-color: transparent;
-  color: #2c2407;
+  color: var(--color-primary-text);
 }
 
 .choice-card strong,
@@ -544,7 +544,7 @@ const handlePayment = async () => {
 .submit-button {
   background: var(--color-primary);
   border-color: transparent;
-  color: #2c2407;
+  color: var(--color-primary-text);
 }
 
 .checkout-side-card {

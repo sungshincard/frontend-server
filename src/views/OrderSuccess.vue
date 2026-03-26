@@ -168,7 +168,7 @@ p {
 
 .primary-button {
   background: var(--color-primary);
-  color: #2c2407;
+  color: var(--color-primary-text);
   border: none;
 }
 

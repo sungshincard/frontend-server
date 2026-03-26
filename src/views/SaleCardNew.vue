@@ -534,7 +534,7 @@ const goBack = () => {
 .select-chip.active {
   background: var(--color-primary);
   border-color: transparent;
-  color: #2c2407;
+  color: var(--color-primary-text);
 }
 
 .price-layout {
