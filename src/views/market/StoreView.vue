@@ -167,7 +167,7 @@ const goListing = (saleCardId) => router.push(`/saleCards/${saleCardId}`)
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
-  color: #2c2407;
+  color: var(--color-primary-text);
   font-size: 2rem;
   font-weight: 900;
 }

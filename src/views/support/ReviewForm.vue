@@ -82,6 +82,6 @@ const goBack = () => router.push(`/orders/${route.params.orderId}`)
 }
 .submit-row { display: flex; justify-content: flex-end; }
 .submit-button {
-  padding: 14px 20px; border: 0; border-radius: 16px; background: var(--color-primary); color: #2c2407; font-weight: 800;
+  padding: 14px 20px; border: 0; border-radius: 16px; background: var(--color-primary); color: var(--color-primary-text); font-weight: 800;
 }
 </style>

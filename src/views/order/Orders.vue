@@ -142,7 +142,7 @@ const goOrder = (orderId) => router.push(`/orders/${orderId}`)
 .tab-chip.active {
   background: var(--color-primary);
   border-color: transparent;
-  color: #2c2407;
+  color: var(--color-primary-text);
 }
 
 .orders-list {

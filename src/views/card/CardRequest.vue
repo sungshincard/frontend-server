@@ -234,7 +234,7 @@ const submitRequest = async () => {
 .page-head h1 { margin: 0; color: var(--color-text-strong); }
 .page-head p { color: var(--color-text-muted); margin-top: 8px;}
 .primary-btn {
-  padding: 12px 20px; background: var(--color-primary); color: #2c2407; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;
+  padding: 12px 20px; background: var(--color-primary); color: var(--color-primary-text); font-weight: 700; border-radius: 8px; border: none; cursor: pointer;
 }
 
 .requests-list h2 { font-size: 18px; margin-bottom: 16px; }
@@ -272,7 +272,7 @@ const submitRequest = async () => {
 .submit-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
 .cancel-button { padding: 12px 20px; border: none; background: transparent; color: var(--color-text-strong); cursor: pointer;}
 .submit-button {
-  padding: 12px 20px; border: 0; border-radius: 8px; background: var(--color-primary); color: #2c2407; font-weight: 700; cursor: pointer;
+  padding: 12px 20px; border: 0; border-radius: 8px; background: var(--color-primary); color: var(--color-primary-text); font-weight: 700; cursor: pointer;
 }
 @media (max-width: 720px) {
   .form-grid.two, .form-grid.three { grid-template-columns: 1fr; }

@@ -432,7 +432,7 @@ const handlePayment = async () => {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  color: #2c2407;
+  color: var(--color-primary-text);
   font-weight: 700;
   font-size: 12px;
 }

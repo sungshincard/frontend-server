@@ -21,6 +21,7 @@ const menuGroups = [
       { name: '구매 내역', path: '/mypage/orders', icon: '🛍️' },
       { name: '판매 내역', path: '/mypage/sales', icon: '🏷️' },
       { name: '관심 상품', path: '/mypage/watchlist', icon: '❤️' },
+      { name: '상품 알림 설정', path: '/mypage/alerts', icon: '🔔' },
     ]
   },
   {

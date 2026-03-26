@@ -31,6 +31,7 @@ const routes = [
       { path: 'orders', name: 'PurchaseHistory', component: () => import('@/views/mypage/PurchaseHistory.vue') },
       { path: 'sales', name: 'SalesHistory', component: () => import('@/views/mypage/SalesHistory.vue') },
       { path: 'watchlist', name: 'MyWatchlist', component: () => import('@/views/mypage/Watchlist.vue') },
+      { path: 'alerts', name: 'MyAlerts', component: () => import('@/views/mypage/Alerts.vue') },
       { path: 'addresses', name: 'MyAddresses', component: () => import('@/views/mypage/AddressBook.vue') },
       { path: 'settlement', name: 'Settlement', component: () => import('@/views/mypage/SettlementView.vue') },
       {

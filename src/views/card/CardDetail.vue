@@ -103,6 +103,18 @@ const toggleWatchlist = async () => {
 const isWatched = computed(() => card.value?.isWatched || false)
 const favoriteCount = computed(() => card.value?.favoriteCount || 0)
 
+const toggleSaleCardWatchlist = async (listing) => {
+  try {
+    const isAdded = await productService.toggleSaleCardWatchlist(listing.id)
+    listing.isWatched = isAdded.data
+    listing.favoriteCount = listing.isWatched 
+      ? (listing.favoriteCount || 0) + 1 
+      : Math.max(0, (listing.favoriteCount || 0) - 1)
+  } catch (error) {
+    console.error('Toggle sale card watchlist failed:', error)
+  }
+}
+
 </script>
 
 <template>
@@ -238,11 +250,8 @@ const favoriteCount = computed(() => card.value?.favoriteCount || 0)
             v-for="item in listingGallery"
             :key="item.id"
             class="listing-card"
-            role="button"
-            tabindex="0"
-            @click="goSaleCardDetail(item.id)"
           >
-            <div class="listing-image">
+            <div class="listing-image" @click="goSaleCardDetail(item.id)">
               <img v-if="item.imageUrls && item.imageUrls.length > 0" :src="getImageUrl(item.imageUrls[0])" :alt="item.title" />
               <div v-else class="no-img-placeholder">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -252,13 +261,22 @@ const favoriteCount = computed(() => card.value?.favoriteCount || 0)
               </div>
               <strong class="listing-price-overlay">{{ item.price?.toLocaleString() }}원</strong>
               <span class="listing-grade-overlay">{{ item.conditionGrade }} 등급</span>
+              
+              <button 
+                type="button" 
+                class="listing-like-btn" 
+                :class="{ active: item.isWatched }"
+                @click.stop="toggleSaleCardWatchlist(item)"
+              >
+                <span class="heart-inline">❤️</span>
+              </button>
             </div>
-            <div class="listing-copy">
+            <div class="listing-copy" @click="goSaleCardDetail(item.id)">
               <strong>{{ item.title }}</strong>
-              <p>
-                {{ item.sellerNickname }}
-                · {{ item.conditionGrade }} 등급
-              </p>
+              <div class="listing-meta-bottom">
+                <p>{{ item.sellerNickname }} · {{ item.conditionGrade }} 등급</p>
+                <span class="fav-mini" v-if="item.favoriteCount > 0">❤️ {{ item.favoriteCount }}</span>
+              </div>
               <span>{{ new Date(item.createdAt).toLocaleDateString() }}</span>
             </div>
           </article>
@@ -293,11 +311,17 @@ const favoriteCount = computed(() => card.value?.favoriteCount || 0)
             </div>
             <div class="overlay-copy">
               <strong>{{ item.title }}</strong>
-              <p>{{ item.seller }} · {{ item.conditionGrade }} 등급</p>
+              <p>{{ item.sellerNickname }} · {{ item.conditionGrade }} 등급</p>
               <small>{{ item.description }}</small>
               <div class="overlay-meta">
                 <span>상태 {{ item.status }}</span>
-                <span>관심 {{ item.favoriteCount }}</span>
+                <span 
+                  class="watch-action-link" 
+                  :class="{ active: item.isWatched }"
+                  @click.stop="toggleSaleCardWatchlist(item)"
+                >
+                  ❤️ {{ item.favoriteCount || 0 }}
+                </span>
               </div>
             </div>
             <div class="overlay-action">
@@ -680,6 +704,71 @@ const favoriteCount = computed(() => card.value?.favoriteCount || 0)
   color: var(--color-text-subtle);
 }
 
+.listing-meta-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fav-mini {
+  font-size: 10px !important;
+  color: var(--color-accent) !important;
+}
+
+.listing-like-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.2s;
+}
+
+.listing-like-btn:hover {
+  background: rgba(10, 10, 10, 0.6);
+  transform: scale(1.1);
+}
+
+.listing-like-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.heart-inline {
+  font-size: 14px;
+  filter: grayscale(1);
+}
+
+.listing-like-btn.active .heart-inline {
+  filter: grayscale(0);
+}
+
+.watch-action-link {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--color-panel-soft);
+  transition: all 0.2s;
+}
+
+.watch-action-link:hover {
+  background: var(--color-background-elevated);
+}
+
+.watch-action-link.active {
+  color: var(--color-accent);
+  background: #fff5f5;
+}
+
 .seller-link {
   padding: 0;
   border: 0;
@@ -880,7 +969,7 @@ const favoriteCount = computed(() => card.value?.favoriteCount || 0)
   border: 0;
   border-radius: 16px;
   background: var(--color-primary);
-  color: #2c2407;
+  color: var(--color-primary-text);
   font-weight: 800;
 }
 

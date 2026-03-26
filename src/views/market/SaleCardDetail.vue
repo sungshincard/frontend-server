@@ -374,7 +374,7 @@ const addComment = () => {
   border: 0;
   border-radius: 14px;
   background: var(--color-primary);
-  color: #2c2407;
+  color: var(--color-primary-text);
   font-weight: 800;
 }
 

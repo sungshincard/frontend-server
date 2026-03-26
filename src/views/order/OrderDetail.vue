@@ -228,7 +228,7 @@ onMounted(fetchOrder)
   width: fit-content; padding: 6px 14px; border-radius: 999px; background: var(--color-background-elevated); color: var(--color-text-muted); font-size: 0.9rem; font-weight: 800;
 }
 .status-badge.paid, .status-badge.shipped, .status-badge.delivered {
-  background: var(--color-primary); color: #2c2407;
+  background: var(--color-primary); color: var(--color-primary-text);
 }
 .status-badge.purchase_confirmed {
   background: #27ae60; color: #fff;
@@ -255,7 +255,7 @@ onMounted(fetchOrder)
 .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
 .action-grid button { padding: 18px 14px; border-radius: 18px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
 .action-grid button:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
-.primary-btn { background: var(--color-primary) !important; color: #2c2407 !important; border: 0 !important; }
+.primary-btn { background: var(--color-primary) !important; color: var(--color-primary-text) !important; border: 0 !important; }
 .cancel-btn { color: #e74c3c !important; }
 
 .loading-state, .error-state { padding: 80px; text-align: center; color: var(--color-text-muted); }

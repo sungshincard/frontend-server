@@ -72,11 +72,19 @@ const productService = {
 
   // Watchlist (Favorite) APIs
   toggleWatchlist(cardMasterId) {
-    return apiClient.post(`/v1/watchlist/toggle/${cardMasterId}`);
+    return apiClient.post(`/v1/watchlist/toggle/card-master/${cardMasterId}`);
+  },
+
+  toggleSaleCardWatchlist(saleCardId) {
+    return apiClient.post(`/v1/watchlist/toggle/sale-card/${saleCardId}`);
   },
 
   checkWatchlist(cardMasterId) {
-    return apiClient.get(`/v1/watchlist/check/${cardMasterId}`);
+    return apiClient.get(`/v1/watchlist/check/card-master/${cardMasterId}`);
+  },
+
+  checkSaleCardWatchlist(saleCardId) {
+    return apiClient.get(`/v1/watchlist/check/sale-card/${saleCardId}`);
   },
 
   getMyWatchlist() {

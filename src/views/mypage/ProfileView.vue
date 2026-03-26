@@ -181,7 +181,7 @@ onMounted(fetchProfile);
 .actions { display: flex; gap: 8px; margin-top: auto; }
 .btn-edit, .btn-save, .btn-cancel { padding: 10px 24px; border-radius: 999px; font-weight: 700; cursor: pointer; transition: 0.2s; }
 .btn-edit { background: var(--color-background-elevated); border: 1px solid var(--color-border); color: var(--color-text-strong); }
-.btn-save { background: var(--color-primary); border: none; color: #2c2407; }
+.btn-save { background: var(--color-primary); border: none; color: var(--color-primary-text); }
 .btn-cancel { background: transparent; border: 1px solid var(--color-border); color: var(--color-text-muted); }
 
 .account-details { padding: 32px; background: var(--color-background-elevated); border-radius: 20px; border: 1px solid var(--color-border); }

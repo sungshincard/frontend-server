@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import productService from '../../services/productService'
+import { getImageUrl } from '@/services/api'
 
 const router = useRouter()
 const watchlist = ref([])
@@ -19,9 +20,22 @@ const fetchWatchlist = async () => {
   }
 }
 
+const listings = computed(() => 
+  watchlist.value.filter(item => item.watchType === 'SALE_CARD')
+)
+
 onMounted(fetchWatchlist)
 
-const goCard = (id) => router.push(`/cards/${id}`)
+const goSaleCard = (id) => router.push(`/sale-cards/${id}`)
+
+const toggleWatch = async (id) => {
+  try {
+    await productService.toggleSaleCardWatchlist(id)
+    fetchWatchlist()
+  } catch (error) {
+    console.error('Failed to toggle watchlist:', error)
+  }
+}
 </script>
 
 <template>
@@ -30,7 +44,7 @@ const goCard = (id) => router.push(`/cards/${id}`)
       <div>
         <p class="eyebrow">Collection</p>
         <h1>관심 상품</h1>
-        <p>내가 찜한 카드 목록입니다.</p>
+        <p>구매를 위해 찜해둔 매물 목록입니다.</p>
       </div>
     </div>
 
@@ -38,30 +52,39 @@ const goCard = (id) => router.push(`/cards/${id}`)
       <p>관심 목록을 불러오는 중...</p>
     </div>
 
-    <div v-else-if="watchlist.length === 0" class="empty-state">
+    <div v-else-if="listings.length === 0" class="empty-state">
       <div class="empty-icon">❤️</div>
       <h3>관심 상품이 없습니다.</h3>
-      <p>도감에서 마음에 드는 카드를 찜해 보세요!</p>
-      <button type="button" class="primary-button" @click="router.push('/cards')">카드 보러가기</button>
+      <p>마켓에서 마음에 드는 상품을 찜해 보세요!</p>
+      <button type="button" class="primary-button" @click="router.push('/cards')">상품 보러가기</button>
     </div>
 
     <div v-else class="watchlist-grid">
       <article 
-        v-for="card in watchlist" 
-        :key="card.id" 
-        class="card-item"
-        @click="goCard(card.id)"
+        v-for="item in listings" 
+        :key="item.id"
+        class="card-item sale-watch"
+        @click="goSaleCard(item.saleCard.id)"
       >
         <div class="card-visual">
-          <img v-if="card.imageUrl" :src="card.imageUrl" :alt="card.cardName" />
+          <img v-if="item.saleCard.imageUrls && item.saleCard.imageUrls.length > 0" :src="getImageUrl(item.saleCard.imageUrls[0])" :alt="item.saleCard.title" />
           <div v-else class="placeholder-art"></div>
+          <span class="type-tag sale">찜한 매물</span>
+
+          <button 
+            type="button" 
+            class="like-overlay-btn active" 
+            @click.stop="toggleWatch(item.saleCard.id)"
+          >
+            ❤️
+          </button>
         </div>
         <div class="card-info">
-          <span class="set-name">{{ card.cardSetName }}</span>
-          <strong>{{ card.cardName }}</strong>
+          <span class="set-name">{{ item.saleCard.status === 'ACTIVE' ? '판매중' : '품절' }}</span>
+          <strong>{{ item.saleCard.title }}</strong>
           <div class="card-meta">
-            <span>{{ card.rarity }}</span>
-            <span class="price" v-if="card.lowestPrice">{{ card.lowestPrice.toLocaleString() }}원~</span>
+            <span>{{ item.saleCard.conditionGrade }} 등급</span>
+            <span class="price">{{ item.saleCard.price.toLocaleString() }}원</span>
           </div>
         </div>
       </article>
@@ -132,6 +155,12 @@ const goCard = (id) => router.push(`/cards/${id}`)
   object-fit: contain;
 }
 
+.type-tag {
+  position: absolute; top: 12px; left: 12px; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 800; text-transform: uppercase;
+}
+.type-tag.master { background: #e0f2fe; color: #0369a1; }
+.type-tag.sale { background: #fef2f2; color: #b91c1c; }
+
 .card-info {
   padding: 16px;
   display: flex;
@@ -166,6 +195,35 @@ const goCard = (id) => router.push(`/cards/${id}`)
   font-weight: 700;
 }
 
+.like-overlay-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.like-overlay-btn:hover {
+  background: rgba(10, 10, 10, 0.6);
+  transform: scale(1.1);
+}
+
+.like-overlay-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 .empty-state {
   text-align: center;
   padding: 80px 0;
@@ -182,7 +240,7 @@ const goCard = (id) => router.push(`/cards/${id}`)
   margin-top: 24px;
   padding: 12px 24px;
   background: var(--color-primary);
-  color: #2c2407;
+  color: var(--color-primary-text);
   border: 0;
   border-radius: 12px;
   font-weight: 700;

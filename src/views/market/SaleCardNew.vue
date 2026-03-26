@@ -399,7 +399,7 @@ const goBack = () => {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  color: #2c2407;
+  color: var(--color-primary-text);
   font-weight: 800;
   font-size: 14px;
 }

@@ -28,6 +28,7 @@ const filteredListings = computed(() => {
 })
 
 const goDetail = (id) => router.push(`/sale-cards/${id}`)
+const goEdit = (id) => router.push(`/sale-cards/${id}/edit`)
 
 const fetchData = async () => {
   try {
@@ -86,8 +87,8 @@ onMounted(fetchData)
           <div class="order-side">
             <strong>{{ item.price.toLocaleString() }}원</strong>
             <div class="actions">
-              <button type="button" class="detail-button primary" @click="goDetail(item.id)">상세 보기</button>
-              <button v-if="item.status === 'ACTIVE'" type="button" class="detail-button" @click="goDetail(item.id)">수정</button>
+              <button v-if="item.status === 'ACTIVE'" type="button" class="detail-button" @click="goEdit(item.id)">수정</button>
+              <button type="button" class="detail-button" @click="goDetail(item.id)">상세 보기</button>
             </div>
           </div>
         </article>
@@ -143,7 +144,7 @@ onMounted(fetchData)
 .detail-button {
   padding: 8px 16px; border: 1px solid var(--color-border); background: var(--color-background-elevated); color: var(--color-text-strong); border-radius: 999px; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
-.detail-button.primary { background: var(--color-primary); border-color: transparent; color: #2c2407; }
+.detail-button.primary { background: var(--color-primary); border-color: transparent; color: var(--color-primary-text); }
 
 .loading, .empty-state { text-align: center; padding: 60px 0; color: var(--color-text-muted); }
 

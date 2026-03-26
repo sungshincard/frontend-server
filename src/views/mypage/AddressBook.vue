@@ -182,7 +182,7 @@ onMounted(() => {
   display: flex; justify-content: space-between; gap: 12px; align-items: center;
 }
 .default-chip {
-  padding: 7px 12px; border-radius: 999px; background: var(--color-primary); color: #2c2407; font-weight: 800;
+  padding: 7px 12px; border-radius: 999px; background: var(--color-primary); color: var(--color-primary-text); font-weight: 800;
 }
 .address-actions { display: flex; gap: 10px; margin-top: 6px; }
 .address-actions button { padding: 10px 14px; border-radius: 12px; font-weight: 700; cursor: pointer; }
