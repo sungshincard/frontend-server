@@ -66,8 +66,8 @@ const paymentOptions = [
 ]
  
 const deliveryOptions = [
-  { value: 'DELIVERY', label: '택배 거래', note: '고정 배송비 3,500원 적용' },
-  { value: 'FACE_TO_FACE', label: '대면 거래', note: '직접 만나서 거래 후 완료 처리' },
+  { value: 'DELIVERY', label: '택배 거래', note: '안전한 비대면 배송 거래' },
+  { value: 'FACE_TO_FACE', label: '대면 거래', note: '직접 만나서 상품 확인 후 거래' },
 ]
 
 const activeAddress = computed(() => {
@@ -75,10 +75,7 @@ const activeAddress = computed(() => {
 })
 
 const numericPrice = computed(() => listing.value?.price || 0)
-const shippingFee = computed(() => {
-  if (tradeType.value !== 'DELIVERY') return 0
-  return 3500
-})
+const shippingFee = computed(() => 0)
 const serviceFee = computed(() => Math.round(numericPrice.value * 0.015))
 const paymentAmount = computed(() => numericPrice.value + shippingFee.value + serviceFee.value)
 
@@ -402,18 +399,17 @@ const handlePayment = async () => {
 }
 
 .listing-photo {
-  width: 160px;
+  width: 140px;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 14px;
   border: 1px solid var(--color-border);
   background: var(--color-panel-soft);
 }
 
 .listing-photo img {
   width: 100%;
-  display: block;
   aspect-ratio: 1;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .mini-card-shell {
@@ -454,7 +450,8 @@ const handlePayment = async () => {
 
 .summary-copy strong {
   color: var(--color-text-strong);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
 }
 
 .block-head {
@@ -471,17 +468,20 @@ const handlePayment = async () => {
 .choice-card,
 .address-card,
 .payment-chip {
-  padding: 18px;
-  border-radius: 20px;
+  padding: 24px;
+  border-radius: 24px;
   text-align: left;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .choice-card.active,
 .address-card.active,
 .payment-chip.active {
   background: var(--color-primary);
-  border-color: transparent;
+  border-color: var(--color-primary);
   color: var(--color-primary-text);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
 }
 
 .choice-card strong,
@@ -584,18 +584,32 @@ const handlePayment = async () => {
   color: var(--color-text-subtle);
 }
 
-.metric-list strong,
-.total-box strong {
+.metric-list strong {
   color: var(--color-text-strong);
+  font-weight: 600;
 }
 
 .total-box {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 24px;
+  padding: 24px 0 0;
   border-top: 1px solid var(--color-border);
+}
+
+.total-box span {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-text-strong);
+}
+
+.total-box strong {
+  font-size: 2rem;
+  color: var(--color-primary);
+  font-weight: 900;
+  letter-spacing: -0.04em;
 }
 
 .tip-list {
@@ -604,7 +618,8 @@ const handlePayment = async () => {
 }
 
 .notice-box {
-  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-background-elevated));
+  background: var(--color-panel-soft);
+  border: 1px dashed var(--color-primary);
 }
 
 @media (max-width: 1100px) {
