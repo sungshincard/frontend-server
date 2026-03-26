@@ -15,6 +15,8 @@ import Watchlist from '../views/Watchlist.vue';
 import StoreView from '../views/StoreView.vue';
 import Orders from '../views/Orders.vue';
 import OrderDetail from '../views/OrderDetail.vue';
+import OrderSuccess from '../views/OrderSuccess.vue';
+import OrderFail from '../views/OrderFail.vue';
 import AddressBook from '../views/AddressBook.vue';
 import CardRequest from '../views/CardRequest.vue';
 import AdminLayout from '../layouts/AdminLayout.vue';
@@ -136,6 +138,16 @@ const routes = [
     path: '/orders/checkout',
     name: 'Checkout',
     component: Checkout
+  },
+  {
+    path: '/order/success',
+    name: 'OrderSuccess',
+    component: OrderSuccess
+  },
+  {
+    path: '/order/fail',
+    name: 'OrderFail',
+    component: OrderFail
   },
   {
     path: '/admin',

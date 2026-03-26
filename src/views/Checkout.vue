@@ -1,21 +1,47 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCardById, getSaleCardById } from '../data/catalog'
+import axios from 'axios'
+import { useAuthStore } from '../stores/auth'
+import productService from '../services/productService'
+import { getImageUrl } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const saleCardId = computed(() => route.query.saleCardId || '')
-const listing = computed(() => (saleCardId.value ? getSaleCardById(saleCardId.value) : null))
-const cardId = computed(() => listing.value?.cardId || route.query.cardId || 'charizard-ex-sar-151')
-const card = computed(() => listing.value?.card || getCardById(cardId.value))
+const listing = ref(null)
+const card = computed(() => listing.value?.cardMaster)
+const isLoading = ref(true)
+
+onMounted(async () => {
+  if (saleCardId.value) {
+    try {
+      isLoading.value = true
+      const response = await productService.getSaleCardDetail(saleCardId.value)
+      listing.value = response.data
+    } catch (error) {
+      console.error('Failed to fetch listing detail:', error)
+      alert('상품 정보를 불러오는 데 실패했습니다.')
+    } finally {
+      isLoading.value = false
+    }
+  } else {
+    isLoading.value = false
+  }
+})
 
 const tradeType = ref('DELIVERY')
 const selectedAddress = ref('home')
 const agreeEscrow = ref(false)
 const agreePolicy = ref(false)
 const paymentMethod = ref('CARD')
+
+const paymentOptions = [
+  { value: 'CARD', label: '카드' },
+  { value: 'BANK_TRANSFER', label: '계좌이체' },
+]
 
 const deliveryOptions = [
   { value: 'DELIVERY', label: '택배 거래', note: '고정 배송비 3,500원 적용' },
@@ -39,7 +65,7 @@ const addresses = [
   },
 ]
 
-const numericPrice = computed(() => Number((listing.value?.price || card.value?.lowestPrice || '0').replace(/[^0-9]/g, '') || 0))
+const numericPrice = computed(() => listing.value?.price || 0)
 const shippingFee = computed(() => {
   if (tradeType.value !== 'DELIVERY') return 0
   return 3500
@@ -54,15 +80,72 @@ const goBack = () => {
     router.push('/cards')
   }
 }
+
+const handlePayment = async () => {
+  if (!agreeEscrow.value || !agreePolicy.value) {
+    alert('모든 약관에 동의해 주세요.')
+    return
+  }
+
+  try {
+    // 1. 백엔드 주문 생성 요청
+    // backend-server/src/main/java/com/sungshincard/backend/domain/order/controller/OrdersController.java(@PostMapping) 연동
+    const orderData = {
+      saleCardId: saleCardId.value,
+      tradeType: tradeType.value,
+      receiverName: '홍길동', // 실제로는 폼 데이터 사용
+      receiverPhone: '010-1234-5678',
+      zipCode: '12345',
+      address: '서울특별시 강남구 테헤란로 123',
+      detailAddress: '101동 1201호',
+      shippingMessage: '문 앞에 놓아주세요'
+    }
+
+    const orderResponse = await axios.post('http://localhost:8080/api/v1/orders', orderData, {
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${authStore.token}`
+      }
+    })
+
+    if (orderResponse.data.status !== 200 && orderResponse.data.status !== 201) {
+      alert('주문 생성에 실패했습니다: ' + orderResponse.data.message)
+      return
+    }
+
+    const order = orderResponse.data.data // OrderResponseDto
+    const amount = paymentAmount.value
+    const orderName = card.value.cardName + (listing.value ? ' (' + listing.value.conditionGrade + ')' : '')
+
+    // 2. 토스 페이먼츠 결제창 호출
+    const tossPayments = TossPayments('test_ck_kYG57Eba3G9JWkmzN1zErpWDOxmA')
+    
+    tossPayments.requestPayment(paymentMethod.value, {
+      amount: amount,
+      orderId: order.tossOrderId, // 백엔드에서 생성해준 고유 토스용 ID 사용
+      orderName: orderName,
+      customerName: '홍길동',
+      successUrl: window.location.origin + '/order/success',
+      failUrl: window.location.origin + '/order/fail',
+      useEscrow: agreeEscrow.value,
+    })
+  } catch (err) {
+    console.error('Order/Payment Error:', err)
+    alert('오류가 발생했습니다: ' + (err.response?.data?.message || err.message))
+  }
+}
 </script>
 
 <template>
-  <div v-if="card" class="checkout-page container">
+  <div v-if="isLoading" class="loading-state container">
+    <p>데이터를 불러오는 중입니다...</p>
+  </div>
+  <div v-else-if="card" class="checkout-page container">
     <div class="page-head">
       <div>
         <p class="eyebrow">Checkout</p>
         <h1>구매하기</h1>
-        <p>{{ card.name }} 구매 전 마지막 확인 단계입니다.</p>
+        <p>{{ card.cardName }} 구매 전 마지막 확인 단계입니다.</p>
       </div>
       <button type="button" class="back-button" @click="goBack">카드 상세로 돌아가기</button>
     </div>
@@ -71,12 +154,12 @@ const goBack = () => {
       <section class="checkout-main-card">
         <div class="section-block product-summary">
           <div class="summary-card-visual">
-            <div v-if="listing?.imageUrl" class="listing-photo">
-              <img :src="listing.imageUrl" :alt="listing.title">
+            <div v-if="listing?.imageUrls && listing.imageUrls.length > 0" class="listing-photo">
+              <img :src="getImageUrl(listing.imageUrls[0])" :alt="listing.title">
             </div>
             <div v-else class="mini-card-shell">
               <div class="mini-card-head">
-                <span>{{ card.name }}</span>
+                <span>{{ card.cardName }}</span>
                 <small>{{ card.hp }}</small>
               </div>
               <div class="mini-card-art"></div>
@@ -88,12 +171,12 @@ const goBack = () => {
           </div>
 
           <div class="summary-copy">
-            <strong>{{ listing?.title || card.name }}</strong>
-            <span>{{ card.setName }} · {{ card.rarity }}</span>
+            <strong>{{ listing?.title || card.cardName }}</strong>
+            <span>{{ card.cardSetName }} · {{ card.rarity }}</span>
             <small v-if="listing">
-              {{ listing.seller }} · {{ listing.conditionGrade }} 등급
+              {{ listing.sellerNickname }} · {{ listing.conditionGrade }} 등급
             </small>
-            <small v-else>현재 최저가 {{ card.lowestPrice }} / 최근 거래가 {{ card.recentPrice }}</small>
+            <small v-else>상세 정보를 불러올 수 없습니다.</small>
           </div>
         </div>
 
@@ -177,7 +260,7 @@ const goBack = () => {
 
         <div class="submit-row">
           <button type="button" class="ghost-button" @click="goBack">취소</button>
-          <button type="button" class="submit-button">결제 진행</button>
+          <button type="button" class="submit-button" @click="handlePayment">결제 진행</button>
         </div>
       </section>
 
@@ -546,8 +629,3 @@ const goBack = () => {
   }
 }
 </style>
-const paymentOptions = [
-  { value: 'CARD', label: '카드' },
-  { value: 'BANK_TRANSFER', label: '계좌이체' },
-  { value: 'POINT', label: '포인트' },
-]
