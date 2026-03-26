@@ -56,17 +56,24 @@ onMounted(async () => {
 const tradeType = ref('DELIVERY')
 const selectedAddressId = ref(null)
 const addresses = ref([])
-const agreeEscrow = ref(false)
 const agreePolicy = ref(false)
+const agreeEscrow = ref(false)
 const paymentMethod = ref('CARD')
  
-const useNewAddress = ref(false)
+const useNewAddress = ref(false) // false: 기본 배송지, true: 신규 배송지
+const isAddressModalOpen = ref(false)
+const addressSearchQuery = ref('')
+
+const shippingMessageOption = ref('문 앞에 놓아주세요')
+const customShippingMessage = ref('')
+
 const newAddressForm = ref({
-  receiverName: '',
-  receiverPhone: '',
+  recipientName: '',
+  recipientPhone: '',
   zipCode: '',
-  address: '',
-  detailAddress: ''
+  address1: '',
+  address2: '',
+  isDefault: false
 })
 
 const execDaumPostcode = () => {
@@ -78,14 +85,47 @@ const execDaumPostcode = () => {
       } else {
         addr = data.jibunAddress
       }
-      newAddressForm.value.address = addr
+      newAddressForm.value.address1 = addr
       newAddressForm.value.zipCode = data.zonecode
       // focus on detail address
-      document.getElementById('detailAddress')?.focus()
+      document.getElementById('address2')?.focus()
     }
   }).open()
 }
  
+const saveToAddressBook = async () => {
+  if (!newAddressForm.value.recipientName || !newAddressForm.value.address1 || !newAddressForm.value.recipientPhone) {
+    alert('수령인, 연락처, 주소를 모두 입력해 주세요.')
+    return
+  }
+  try {
+    const res = await addressService.createAddress({
+      ...newAddressForm.value,
+      isDefault: true // Always save as default when using this button
+    })
+    if (res.status === 200 || res.status === 201) {
+      alert('주소록에 기본 배송지로 등록되었습니다.')
+      // Refresh addresses list
+      const addressesRes = await addressService.getAddresses()
+      addresses.value = addressesRes.data
+      // Switch back to saved address tab and select this one
+      const newAddrId = res.data.id
+      selectedAddressId.value = newAddrId
+      useNewAddress.value = false
+    }
+  } catch (e) {
+    console.error('Failed to save address:', e)
+    alert('주소 저장에 실패했습니다.')
+  }
+}
+
+const openAddressModal = () => { isAddressModalOpen.value = true }
+const closeAddressModal = () => { isAddressModalOpen.value = false }
+const selectAddress = (id) => {
+  selectedAddressId.value = id
+  closeAddressModal()
+}
+
 const paymentOptions = [
   { value: 'CARD', label: '카드' },
   { value: 'BANK_TRANSFER', label: '계좌이체' },
@@ -98,6 +138,16 @@ const deliveryOptions = [
 
 const activeAddress = computed(() => {
   return addresses.value.find(a => a.id === selectedAddressId.value) || null
+})
+
+const filteredAddresses = computed(() => {
+  if (!addressSearchQuery.value) return addresses.value
+  const q = addressSearchQuery.value.toLowerCase()
+  return addresses.value.filter(a => 
+    a.recipientName.toLowerCase().includes(q) || 
+    a.address1.toLowerCase().includes(q) || 
+    a.recipientPhone.includes(q)
+  )
 })
 
 const numericPrice = computed(() => listing.value?.price || 0)
@@ -121,46 +171,50 @@ const handlePayment = async () => {
 
   try {
     // 1. 백엔드 주문 생성 요청
+    const finalShippingMessage = shippingMessageOption.value === '직접 입력' 
+      ? customShippingMessage.value 
+      : shippingMessageOption.value
+
     let orderData = {
       saleCardId: saleCardId.value,
       tradeType: tradeType.value,
-      shippingMessage: '문 앞에 놓아주세요'
+      shippingMessage: finalShippingMessage
     }
 
     if (useNewAddress.value) {
       orderData = {
         ...orderData,
-        receiverName: newAddressForm.value.receiverName,
-        receiverPhone: newAddressForm.value.receiverPhone,
+        recipientName: newAddressForm.value.recipientName,
+        recipientPhone: newAddressForm.value.recipientPhone,
         zipCode: newAddressForm.value.zipCode,
-        address: newAddressForm.value.address,
-        detailAddress: newAddressForm.value.detailAddress
+        address1: newAddressForm.value.address1,
+        address2: newAddressForm.value.address2
       }
       
       // Basic validation
-      if (!orderData.receiverName || !orderData.address) {
-        alert('배송지 정보를 모두 입력해 주세요.')
+      if (!orderData.recipientName || !orderData.address1 || !orderData.recipientPhone) {
+        alert('배송지 정보(이름, 연락처, 주소)를 모두 입력해 주세요.')
         return
       }
     } else {
       orderData = {
         ...orderData,
-        receiverName: activeAddress.value?.receiverName || authStore.user?.name || '',
-        receiverPhone: activeAddress.value?.receiverPhone || authStore.user?.phoneNumber || '',
+        recipientName: activeAddress.value?.recipientName || authStore.user?.name || '',
+        recipientPhone: activeAddress.value?.recipientPhone || authStore.user?.phoneNumber || '',
         zipCode: activeAddress.value?.zipCode || '',
-        address: activeAddress.value?.address || '',
-        detailAddress: activeAddress.value?.detailAddress || ''
+        address1: activeAddress.value?.address1 || '',
+        address2: activeAddress.value?.address2 || ''
       }
     }
 
     const orderResponse = await orderService.createOrder(orderData)
 
-    if (orderResponse.data.status !== 200 && orderResponse.data.status !== 201) {
-      alert('주문 생성에 실패했습니다: ' + orderResponse.data.message)
+    if (orderResponse.status !== 200 && orderResponse.status !== 201) {
+      alert('주문 생성에 실패했습니다: ' + orderResponse.message)
       return
     }
 
-    const order = orderResponse.data.data // OrderResponseDto
+    const order = orderResponse.data // OrderResponseDto
     const amount = paymentAmount.value
     const orderName = card.value.cardName + (listing.value ? ' (' + listing.value.conditionGrade + ')' : '')
 
@@ -247,79 +301,145 @@ const handlePayment = async () => {
           </div>
         </div>
 
-        <div v-if="tradeType === 'DELIVERY'" class="section-block">
-          <div class="block-head">
-            <h2>배송지 선택</h2>
-            <span>기본 배송지 선택 또는 직접 입력</span>
+        <div v-if="tradeType === 'DELIVERY'" class="section-block address-section-musinsa">
+          <div class="section-top-row">
+            <h2>배송지 정보</h2>
           </div>
 
-          <!-- Address Type Tabs -->
-          <div class="address-tabs">
+          <!-- Musinsa Style Segmented Control -->
+          <div class="segmented-control">
             <button 
               type="button" 
-              class="address-tab-btn" 
+              class="segment-btn" 
               :class="{ active: !useNewAddress }"
               @click="useNewAddress = false"
             >
-              기존 주소 불러오기
+              기본 배송지
             </button>
             <button 
               type="button" 
-              class="address-tab-btn" 
+              class="segment-btn" 
               :class="{ active: useNewAddress }"
               @click="useNewAddress = true"
             >
-              새 주소 직접 입력
+              신규 배송지
             </button>
           </div>
 
-          <div v-if="!useNewAddress" class="address-grid animate-fade-in">
-            <button
-              v-for="addr in addresses"
-              :key="addr.id"
-              type="button"
-              class="address-card"
-              :class="{ active: selectedAddressId === addr.id }"
-              @click="selectedAddressId = addr.id"
-            >
-              <div class="address-head">
-                <strong>{{ addr.label }}</strong>
-                <span>{{ addr.receiverName }}</span>
+          <!-- Tab 1: Saved Address View -->
+          <div v-if="!useNewAddress" class="tab-content-musinsa animate-fade-in">
+            <div v-if="activeAddress" class="read-only-address-card">
+              <div class="card-top">
+                <strong>{{ activeAddress.recipientName }}</strong>
+                <span v-if="activeAddress.isDefault" class="badge-musinsa">기본 배송지</span>
+                <button type="button" class="mini-change-btn" @click="openAddressModal">배송지 변경</button>
               </div>
-              <p>{{ addr.receiverPhone }}</p>
-              <small>{{ addr.address }} {{ addr.detailAddress }}</small>
-            </button>
-            <div v-if="addresses.length === 0" class="empty-address">
-              <p>등록된 주소가 없습니다. 새 주소를 입력해 주세요.</p>
+              <p class="addr-detail">{{ activeAddress.address1 }} {{ activeAddress.address2 }}</p>
+              <p class="addr-phone">{{ activeAddress.recipientPhone }}</p>
+            </div>
+            <div v-else class="empty-placeholder" @click="useNewAddress = true">
+              <p>저장된 배송지가 없습니다. 신규 배송지를 입력해 주세요.</p>
             </div>
           </div>
 
-          <!-- New Address Form -->
-          <div v-else class="new-address-form animate-fade-in">
-            <div class="form-row split">
-              <div class="input-group">
-                <label>수령인</label>
-                <input v-model="newAddressForm.receiverName" type="text" placeholder="이름을 입력하세요">
-              </div>
-              <div class="input-group">
-                <label>연락처</label>
-                <input v-model="newAddressForm.receiverPhone" type="text" placeholder="휴대폰 번호">
-              </div>
-            </div>
-            
-            <div class="form-row">
-              <div class="input-group">
-                <label>주소</label>
-                <div class="zip-row">
-                  <input v-model="newAddressForm.zipCode" type="text" readonly placeholder="우편번호">
-                  <button type="button" class="zip-btn" @click="execDaumPostcode">주소 찾기</button>
+          <!-- Tab 2: New Address Form -->
+          <div v-else class="tab-content-musinsa animate-fade-in">
+            <div class="musinsa-form">
+              <div class="form-row-musinsa">
+                <div class="input-block">
+                  <label>수령인</label>
+                  <input v-model="newAddressForm.recipientName" type="text" placeholder="수령인 이름을 입력하세요">
                 </div>
-                <input v-model="newAddressForm.address" type="text" readonly placeholder="주소" class="full-addr">
-                <input id="detailAddress" v-model="newAddressForm.detailAddress" type="text" placeholder="상세 주소를 입력하세요">
               </div>
+              <div class="form-row-musinsa">
+                <div class="input-block">
+                  <label>휴대전화</label>
+                  <input 
+                    v-model="newAddressForm.recipientPhone" 
+                    type="tel" 
+                    placeholder="숫자만 입력해 주세요"
+                    @input="newAddressForm.recipientPhone = newAddressForm.recipientPhone.replace(/[^0-9]/g, '')"
+                  >
+                </div>
+              </div>
+              <div class="form-row-musinsa">
+                <div class="input-block">
+                  <label>배송지 주소</label>
+                  <div class="zip-group">
+                    <input v-model="newAddressForm.zipCode" type="text" readonly placeholder="우편번호">
+                    <button type="button" class="black-zip-btn" @click="execDaumPostcode">우편번호 찾기</button>
+                  </div>
+                  <input v-model="newAddressForm.address1" type="text" readonly placeholder="기본 주소" class="read-only-box">
+                  <input id="address2" v-model="newAddressForm.address2" type="text" placeholder="상세 주소를 입력하세요">
+                </div>
+              </div>
+              <div class="form-footer-musinsa">
+                <button type="button" class="musinsa-secondary-btn" @click="saveToAddressBook">
+                  이 주소를 기본 배송지로 추가
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shipping Message Area -->
+          <div class="shipping-request-area">
+            <div class="input-block">
+              <label>배송 요청사항</label>
+              <select v-model="shippingMessageOption" class="minimal-select">
+                <option value="문 앞에 놓아주세요">문 앞에 놓아주세요</option>
+                <option value="경비실에 맡겨주세요">경비실에 맡겨주세요</option>
+                <option value="배송 전 연락 바랍니다">배송 전 연락 바랍니다</option>
+                <option value="직접 입력">직접 입력</option>
+              </select>
+            </div>
+            <div v-if="shippingMessageOption === '직접 입력'" class="direct-input-box animate-fade-in">
+              <textarea 
+                v-model="customShippingMessage" 
+                placeholder="최대 50자까지 입력 가능합니다." 
+                maxlength="50"
+                class="minimal-textarea"
+              ></textarea>
             </div>
           </div>
         </div>
+
+        <Teleport to="body">
+          <div v-if="isAddressModalOpen" class="musinsa-modal-overlay" @click.self="closeAddressModal">
+            <div class="musinsa-address-modal animate-slide-up">
+              <div class="modal-header">
+                <h3>배송지 정보</h3>
+                <button type="button" class="close-btn" @click="closeAddressModal">&times;</button>
+              </div>
+              <div class="modal-content scrollbar-hidden">
+                <div class="modal-search">
+                  <input v-model="addressSearchQuery" type="text" placeholder="배송지 정보로 검색하세요">
+                  <span class="search-icon">🔍</span>
+                </div>
+                <div class="modal-list">
+                  <div 
+                    v-for="addr in filteredAddresses" 
+                    :key="addr.id" 
+                    class="modal-item"
+                    :class="{ selected: selectedAddressId === addr.id }"
+                    @click="selectAddress(addr.id)"
+                  >
+                    <div class="item-radio">
+                      <span class="radio-circle"></span>
+                    </div>
+                    <div class="item-body">
+                      <div class="item-top">
+                        <strong>{{ addr.recipientName }}</strong>
+                        <span v-if="addr.isDefault" class="badge-sm">기본</span>
+                      </div>
+                      <p class="item-addr">{{ addr.address1 }} {{ addr.address2 }}</p>
+                      <p class="item-phone">{{ addr.recipientPhone }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Teleport>
 
         <div class="section-block">
           <div class="block-head">
@@ -597,6 +717,403 @@ const handlePayment = async () => {
   opacity: 0.9;
 }
 
+/* Musinsa Style Address Section Overhaul */
+.address-section-musinsa {
+  margin-bottom: 40px;
+}
+
+.section-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.segmented-control {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 32px;
+}
+
+.segment-btn {
+  flex: 1;
+  padding: 16px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.segment-btn.active {
+  color: #000;
+  font-weight: 800;
+}
+
+.segment-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #000;
+}
+
+.tab-content-musinsa {
+  margin-bottom: 32px;
+}
+
+/* Saved Address Card */
+.read-only-address-card {
+  padding: 24px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.card-top strong {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.badge-musinsa {
+  background: #f0f0f0;
+  color: #666;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.mini-change-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addr-detail {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.addr-phone {
+  font-size: 0.95rem;
+  color: #888;
+}
+
+/* Musinsa Form Styling */
+.musinsa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-row-musinsa {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-block label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.input-block input,
+.input-block select,
+.input-block textarea {
+  padding: 14px 16px;
+  border: 1px solid #ddd;
+  border-radius: 0;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.input-block input:focus,
+.input-block select:focus,
+.input-block textarea:focus {
+  outline: none;
+  border-color: #000;
+}
+
+.zip-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.zip-group input { flex: 1; }
+
+.black-zip-btn {
+  padding: 0 16px;
+  background: #000;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+}
+
+.read-only-box {
+  background: #f9f9f9;
+  color: #777;
+  margin-bottom: 8px;
+}
+
+.form-footer-musinsa {
+  margin-top: 8px;
+}
+
+.check-label-minimal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.custom-check-musinsa {
+  width: 18px;
+  height: 18px;
+  accent-color: #000;
+}
+
+/* Shipping Request Area */
+.shipping-request-area {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid #eee;
+}
+
+.minimal-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  width: 100%;
+}
+
+.direct-input-box {
+  margin-top: 12px;
+}
+
+.minimal-textarea {
+  width: 100%;
+  height: 80px;
+  resize: none;
+}
+
+/* Modal Overlay & Base */
+.musinsa-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.musinsa-address-modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 2px solid #000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.modal-search {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.modal-search input {
+  width: 100%;
+  padding: 12px 16px 12px 40px;
+  border: 1px solid #eee;
+  background: #f5f5f5;
+  font-size: 0.9rem;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.4;
+}
+
+.modal-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-item {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.item-radio .radio-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  display: block;
+}
+
+.modal-item.selected .radio-circle {
+  border: 6px solid #000;
+}
+
+.item-body { flex: 1; }
+
+.item-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.item-top strong {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.badge-sm {
+  font-size: 10px;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  color: #888;
+  font-weight: 700;
+}
+
+.item-addr {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.item-phone {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.musinsa-secondary-btn {
+  width: 100%;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #000;
+  color: #000;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.musinsa-secondary-btn:hover {
+  background: #f9f9f9;
+}
+
+.empty-placeholder {
+  padding: 60px 20px;
+  border: 1px dashed #ddd;
+  text-align: center;
+  cursor: pointer;
+}
+
+.empty-placeholder p {
+  color: #999;
+  font-weight: 600;
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+.scrollbar-hidden::-webkit-scrollbar { display: none; }
+
 .address-grid {
   display: grid;
   gap: 12px;
@@ -758,21 +1275,36 @@ const handlePayment = async () => {
   border: 1px dashed var(--color-border);
 }
 
-/* New Address Form Styling */
+/* New Address Form Styling (Refined) */
 .new-address-form {
   margin-top: 24px;
-  padding: 24px;
-  background: var(--color-panel-soft);
-  border-radius: 24px;
+  padding: 32px;
+  background: var(--color-background-elevated);
+  border-radius: 28px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 32px;
+  border: 1px solid var(--color-border);
+}
+
+.form-section {
+  display: grid;
+  gap: 18px;
+}
+
+.form-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text-strong);
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .form-row {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .form-row.split {
@@ -790,9 +1322,11 @@ const handlePayment = async () => {
 }
 
 .input-group label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .input-group input {
@@ -834,6 +1368,14 @@ const handlePayment = async () => {
 
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out;
+}
+
+.address-save-check {
+  margin-top: 8px;
+  padding: 16px;
+  background: var(--color-background);
+  border-radius: 16px;
+  border: 1px dashed var(--color-border);
 }
 
 @keyframes fadeIn {
