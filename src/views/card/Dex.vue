@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import productService from '../services/productService'
+import productService from '@/services/productService'
 
 const router = useRouter()
 const dexEntries = ref([])

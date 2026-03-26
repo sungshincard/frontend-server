@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cards, storeReviews } from '../data/catalog'
-import apiClient from '../services/api'
+import { cards, storeReviews } from '@/data/catalog'
+import apiClient from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()

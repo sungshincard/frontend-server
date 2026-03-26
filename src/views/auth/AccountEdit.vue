@@ -1,8 +1,8 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
-import authService from '../services/authService';
+import { useAuthStore } from '@/stores/auth';
+import authService from '@/services/authService';
 import { toast } from 'vue3-toastify';
 
 const router = useRouter();

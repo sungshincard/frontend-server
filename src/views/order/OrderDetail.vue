@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getSaleCardById, getOrderById } from '../data/catalog'
+import { getSaleCardById, getOrderById } from '@/data/catalog'
 
 const route = useRoute()
 const router = useRouter()

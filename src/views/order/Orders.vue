@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { mockOrders } from '../data/catalog'
+import { mockOrders } from '@/data/catalog'
 
 const router = useRouter()
 const route = useRoute()

@@ -1,10 +1,10 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { cardGroups, getCardsByGroupId, getStoreByName } from '../data/catalog'
-import { useWatchlistStore } from '../stores/watchlist'
-import productService from '../services/productService'
-import { getImageUrl } from '../services/api'
+import { cardGroups, getCardsByGroupId, getStoreByName } from '@/data/catalog'
+import { useWatchlistStore } from '@/stores/watchlist'
+import productService from '@/services/productService'
+import { getImageUrl } from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()

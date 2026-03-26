@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import requestService from '../services/requestService'
-import productService from '../services/productService'
+import requestService from '@/services/requestService'
+import productService from '@/services/productService'
 import { toast } from 'vue3-toastify'
 
 const showModal = ref(false)

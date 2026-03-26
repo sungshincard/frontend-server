@@ -1,8 +1,8 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import productService from '../services/productService'
-import { getImageUrl } from '../services/api'
+import productService from '@/services/productService'
+import { getImageUrl } from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()

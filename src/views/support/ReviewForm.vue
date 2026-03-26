@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getOrderById } from '../data/catalog'
+import { getOrderById } from '@/data/catalog'
 
 const route = useRoute()
 const router = useRouter()

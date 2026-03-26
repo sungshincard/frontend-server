@@ -1,173 +1,144 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Home from '../views/Home.vue';
-import Dex from '../views/Dex.vue';
-import Auth from '../views/Auth.vue';
-import MyPage from '../views/MyPage.vue';
-import AccountVerify from '../views/AccountVerify.vue';
-import AccountEdit from '../views/AccountEdit.vue';
-import Cards from '../views/Cards.vue';
-import CardGroup from '../views/CardGroup.vue';
-import CardDetail from '../views/CardDetail.vue';
-import SaleCardNew from '../views/SaleCardNew.vue';
-import SaleCardDetail from '../views/SaleCardDetail.vue';
-import Checkout from '../views/Checkout.vue';
-import StoreView from '../views/StoreView.vue';
-import Orders from '../views/Orders.vue';
-import OrderDetail from '../views/OrderDetail.vue';
-import OrderSuccess from '../views/OrderSuccess.vue';
-import OrderFail from '../views/OrderFail.vue';
-import CardRequest from '../views/CardRequest.vue';
-import AdminLayout from '../layouts/AdminLayout.vue';
-import AdminHome from '../views/admin/AdminHome.vue';
-import AdminCardMaster from '../views/admin/AdminCardMaster.vue';
-import ReviewForm from '../views/ReviewForm.vue';
-import DisputeForm from '../views/DisputeForm.vue';
-import Policy from '../views/Policy.vue';
 import { useAuthStore } from '../stores/auth';
 import { toast } from 'vue3-toastify';
 
 // MyPage Nested Components
-import ProfileView from '../views/mypage/ProfileView.vue';
-import OrderHistory from '../views/mypage/OrderHistory.vue';
-import SalesHistory from '../views/mypage/SalesHistory.vue';
-import Watchlist from '../views/mypage/Watchlist.vue';
-import AddressBook from '../views/mypage/AddressBook.vue';
-import SettlementView from '../views/mypage/SettlementView.vue';
+// Lazy loaded below
 
 const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home
+    component: () => import('@/views/home/Home.vue')
   },
   {
     path: '/dex',
     name: 'Dex',
-    component: Dex
+    component: () => import('@/views/card/Dex.vue')
   },
   {
     path: '/login',
     name: 'Login',
-    component: Auth
+    component: () => import('@/views/auth/Auth.vue')
   },
   {
     path: '/mypage',
-    component: MyPage,
+    component: () => import('@/views/MyPage.vue'),
     meta: { requiresAuth: true },
     children: [
       { path: '', redirect: '/mypage/profile' },
-      { path: 'profile', name: 'MyProfile', component: ProfileView },
-      { path: 'orders', name: 'PurchaseHistory', component: OrderHistory },
-      { path: 'sales', name: 'SalesHistory', component: SalesHistory },
-      { path: 'watchlist', name: 'MyWatchlist', component: Watchlist },
-      { path: 'addresses', name: 'MyAddresses', component: AddressBook },
-      { path: 'settlement', name: 'Settlement', component: SettlementView },
+      { path: 'profile', name: 'MyProfile', component: () => import('@/views/mypage/ProfileView.vue') },
+      { path: 'orders', name: 'PurchaseHistory', component: () => import('@/views/mypage/OrderHistory.vue') },
+      { path: 'sales', name: 'SalesHistory', component: () => import('@/views/mypage/SalesHistory.vue') },
+      { path: 'watchlist', name: 'MyWatchlist', component: () => import('@/views/mypage/Watchlist.vue') },
+      { path: 'addresses', name: 'MyAddresses', component: () => import('@/views/mypage/AddressBook.vue') },
+      { path: 'settlement', name: 'Settlement', component: () => import('@/views/mypage/SettlementView.vue') },
       {
         path: 'account/verify',
         name: 'AccountVerify',
-        component: AccountVerify
+        component: () => import('@/views/auth/AccountVerify.vue')
       },
       {
         path: 'account/edit',
         name: 'AccountEdit',
-        component: AccountEdit
+        component: () => import('@/views/auth/AccountEdit.vue')
       },
     ]
   },
   {
     path: '/orders',
     name: 'Orders',
-    component: Orders
+    component: () => import('@/views/order/Orders.vue')
   },
   {
     path: '/orders/:orderId',
     name: 'OrderDetail',
-    component: OrderDetail
+    component: () => import('@/views/order/OrderDetail.vue')
   },
   {
     path: '/orders/:orderId/review',
     name: 'ReviewForm',
-    component: ReviewForm
+    component: () => import('@/views/support/ReviewForm.vue')
   },
   {
     path: '/orders/:orderId/dispute',
     name: 'DisputeForm',
-    component: DisputeForm
+    component: () => import('@/views/support/DisputeForm.vue')
   },
   {
     path: '/card-requests/new',
     name: 'CardRequest',
-    component: CardRequest
+    component: () => import('@/views/card/CardRequest.vue')
   },
   {
     path: '/policy',
     name: 'Policy',
-    component: Policy
+    component: () => import('@/views/support/Policy.vue')
   },
   {
     path: '/stores/:storeId',
     name: 'StoreView',
-    component: StoreView
+    component: () => import('@/views/market/StoreView.vue')
   },
   {
     path: '/cards',
     name: 'Cards',
-    component: Cards
+    component: () => import('@/views/card/Cards.vue')
   },
   {
     path: '/cards/group/:groupId',
     name: 'CardGroup',
-    component: CardGroup
+    component: () => import('@/views/card/CardGroup.vue')
   },
   {
     path: '/cards/:cardId',
     name: 'CardDetail',
-    component: CardDetail
+    component: () => import('@/views/card/CardDetail.vue')
   },
   {
     path: '/sale-cards/new',
     name: 'SaleCardNew',
-    component: SaleCardNew
+    component: () => import('@/views/market/SaleCardNew.vue')
   },
   {
     path: '/sale-cards/:saleCardId/edit',
     name: 'SaleCardEdit',
-    component: SaleCardNew
+    component: () => import('@/views/market/SaleCardNew.vue')
   },
   {
     path: '/sale-cards/:saleCardId',
     name: 'SaleCardDetail',
-    component: SaleCardDetail
+    component: () => import('@/views/market/SaleCardDetail.vue')
   },
   {
     path: '/orders/checkout',
     name: 'Checkout',
-    component: Checkout
+    component: () => import('@/views/order/Checkout.vue')
   },
   {
     path: '/order/success',
     name: 'OrderSuccess',
-    component: OrderSuccess
+    component: () => import('@/views/order/OrderSuccess.vue')
   },
   {
     path: '/order/fail',
     name: 'OrderFail',
-    component: OrderFail
+    component: () => import('@/views/order/OrderFail.vue')
   },
   {
     path: '/admin',
-    component: AdminLayout,
+    component: () => import('@/layouts/AdminLayout.vue'),
     meta: { requiresAdmin: true },
     children: [
       {
         path: '',
         name: '어드민 대시보드',
-        component: AdminHome
+        component: () => import('@/views/admin/AdminHome.vue')
       },
       {
         path: 'card-masters',
         name: '카드 도감 관리',
-        component: AdminCardMaster
+        component: () => import('@/views/admin/AdminCardMaster.vue')
       }
     ]
   }

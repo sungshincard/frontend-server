@@ -2,11 +2,11 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
-import { useAuthStore } from '../stores/auth'
-import productService from '../services/productService'
-import addressService from '../services/addressService'
-import authService from '../services/authService'
-import { getImageUrl } from '../services/api'
+import { useAuthStore } from '@/stores/auth'
+import productService from '@/services/productService'
+import addressService from '@/services/addressService'
+import authService from '@/services/authService'
+import { getImageUrl } from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
