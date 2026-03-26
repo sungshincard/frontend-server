@@ -3,6 +3,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
+import orderService from '@/services/orderService'
 import productService from '@/services/productService'
 import addressService from '@/services/addressService'
 import authService from '@/services/authService'
@@ -108,12 +109,7 @@ const handlePayment = async () => {
       shippingMessage: '문 앞에 놓아주세요'
     }
 
-    const orderResponse = await axios.post('http://localhost:8080/api/v1/orders', orderData, {
-      withCredentials: true,
-      headers: {
-        Authorization: `Bearer ${authStore.token}`
-      }
-    })
+    const orderResponse = await orderService.createOrder(orderData)
 
     if (orderResponse.data.status !== 200 && orderResponse.data.status !== 201) {
       alert('주문 생성에 실패했습니다: ' + orderResponse.data.message)

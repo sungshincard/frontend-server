@@ -24,6 +24,16 @@ const orderService = {
         trackingNumber: shippingData.trackingNumber
       }
     });
+  },
+  
+  cancelOrder(orderId, reason) {
+    return apiClient.post(`/v1/orders/${orderId}/cancel`, null, {
+      params: { reason }
+    });
+  },
+  
+  confirmOrder(orderId) {
+    return apiClient.post(`/v1/orders/${orderId}/confirm`);
   }
 };
 
