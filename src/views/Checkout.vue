@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 import productService from '../services/productService'
+import addressService from '../services/addressService'
+import authService from '../services/authService'
 import { getImageUrl } from '../services/api'
 
 const route = useRoute()
@@ -16,54 +18,60 @@ const card = computed(() => listing.value?.cardMaster)
 const isLoading = ref(true)
 
 onMounted(async () => {
-  if (saleCardId.value) {
-    try {
-      isLoading.value = true
-      const response = await productService.getSaleCardDetail(saleCardId.value)
-      listing.value = response.data
-    } catch (error) {
-      console.error('Failed to fetch listing detail:', error)
-      alert('상품 정보를 불러오는 데 실패했습니다.')
-    } finally {
-      isLoading.value = false
+  try {
+    isLoading.value = true
+    
+    // Fetch Sale Card
+    if (saleCardId.value) {
+      const resp = await productService.getSaleCardDetail(saleCardId.value)
+      listing.value = resp.data
     }
-  } else {
+    
+    // Fetch Addresses
+    const addrResp = await addressService.getAddresses()
+    addresses.value = addrResp.data
+    
+    // Auto-select default address
+    const defaultAddr = addresses.value.find(a => a.isDefault)
+    if (defaultAddr) {
+      selectedAddressId.value = defaultAddr.id
+    } else if (addresses.value.length > 0) {
+      selectedAddressId.value = addresses.value[0].id
+    }
+
+    // Fetch Profile (to get name/nickname for customerName)
+    if (!authStore.user || !authStore.user.name) {
+      const profileResp = await authService.getMe()
+      authStore.setUser(profileResp.data)
+    }
+    
+  } catch (error) {
+    console.error('Failed to fetch checkout data:', error)
+  } finally {
     isLoading.value = false
   }
 })
 
 const tradeType = ref('DELIVERY')
-const selectedAddress = ref('home')
+const selectedAddressId = ref(null)
+const addresses = ref([])
 const agreeEscrow = ref(false)
 const agreePolicy = ref(false)
 const paymentMethod = ref('CARD')
-
+ 
 const paymentOptions = [
   { value: 'CARD', label: '카드' },
   { value: 'BANK_TRANSFER', label: '계좌이체' },
 ]
-
+ 
 const deliveryOptions = [
   { value: 'DELIVERY', label: '택배 거래', note: '고정 배송비 3,500원 적용' },
   { value: 'FACE_TO_FACE', label: '대면 거래', note: '직접 만나서 거래 후 완료 처리' },
 ]
 
-const addresses = [
-  {
-    id: 'home',
-    label: '집',
-    name: '홍길동',
-    phone: '010-1234-5678',
-    address: '서울특별시 강남구 테헤란로 123, 101동 1201호',
-  },
-  {
-    id: 'office',
-    label: '회사',
-    name: '홍길동',
-    phone: '010-2222-3333',
-    address: '서울특별시 서초구 서초대로 55, 8층',
-  },
-]
+const activeAddress = computed(() => {
+  return addresses.value.find(a => a.id === selectedAddressId.value) || null
+})
 
 const numericPrice = computed(() => listing.value?.price || 0)
 const shippingFee = computed(() => {
@@ -89,15 +97,14 @@ const handlePayment = async () => {
 
   try {
     // 1. 백엔드 주문 생성 요청
-    // backend-server/src/main/java/com/sungshincard/backend/domain/order/controller/OrdersController.java(@PostMapping) 연동
     const orderData = {
       saleCardId: saleCardId.value,
       tradeType: tradeType.value,
-      receiverName: '홍길동', // 실제로는 폼 데이터 사용
-      receiverPhone: '010-1234-5678',
-      zipCode: '12345',
-      address: '서울특별시 강남구 테헤란로 123',
-      detailAddress: '101동 1201호',
+      receiverName: activeAddress.value?.receiverName || authStore.user?.name || '',
+      receiverPhone: activeAddress.value?.receiverPhone || authStore.user?.phoneNumber || '',
+      zipCode: activeAddress.value?.zipCode || '',
+      address: activeAddress.value?.address || '',
+      detailAddress: activeAddress.value?.detailAddress || '',
       shippingMessage: '문 앞에 놓아주세요'
     }
 
@@ -122,9 +129,9 @@ const handlePayment = async () => {
     
     tossPayments.requestPayment(paymentMethod.value, {
       amount: amount,
-      orderId: order.tossOrderId, // 백엔드에서 생성해준 고유 토스용 ID 사용
+      orderId: order.tossOrderId,
       orderName: orderName,
-      customerName: '홍길동',
+      customerName: authStore.user?.name || authStore.user?.nickname || '구매자',
       successUrl: window.location.origin + '/order/success',
       failUrl: window.location.origin + '/order/fail',
       useEscrow: agreeEscrow.value,
@@ -207,19 +214,19 @@ const handlePayment = async () => {
           </div>
           <div class="address-grid">
             <button
-              v-for="address in addresses"
-              :key="address.id"
+              v-for="addr in addresses"
+              :key="addr.id"
               type="button"
               class="address-card"
-              :class="{ active: selectedAddress === address.id }"
-              @click="selectedAddress = address.id"
+              :class="{ active: selectedAddressId === addr.id }"
+              @click="selectedAddressId = addr.id"
             >
               <div class="address-head">
-                <strong>{{ address.label }}</strong>
-                <span>{{ address.name }}</span>
+                <strong>{{ addr.label }}</strong>
+                <span>{{ addr.receiverName }}</span>
               </div>
-              <p>{{ address.phone }}</p>
-              <small>{{ address.address }}</small>
+              <p>{{ addr.receiverPhone }}</p>
+              <small>{{ addr.address }} {{ addr.detailAddress }}</small>
             </button>
           </div>
         </div>

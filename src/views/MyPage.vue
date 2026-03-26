@@ -298,6 +298,33 @@ onMounted(() => {
       <div v-if="saveMessage" class="save-message">✓ {{ saveMessage }}</div>
       <div v-if="errorMessage && profile" class="inline-error">{{ errorMessage }}</div>
 
+      <section class="trade-section">
+        <div class="section-header">
+          <div>
+            <strong>나의 거래</strong>
+            <p>구매 및 판매 진행 현황을 한눈에 확인합니다.</p>
+          </div>
+        </div>
+        <div class="trade-menu-grid">
+          <router-link to="/mypage/orders/buy" class="trade-menu-item">
+            <div class="trade-menu-label">구매 내역</div>
+            <div class="trade-menu-value">0 <span>건</span></div>
+          </router-link>
+          <router-link to="/mypage/orders/sell" class="trade-menu-item">
+            <div class="trade-menu-label">판매 내역</div>
+            <div class="trade-menu-value">{{ profile?.store?.completedSaleCount || 0 }} <span>건</span></div>
+          </router-link>
+          <router-link to="/watchlist" class="trade-menu-item">
+            <div class="trade-menu-label">관심 상품</div>
+            <div class="trade-menu-value">관심 <span>확인</span></div>
+          </router-link>
+          <router-link to="/addresses" class="trade-menu-item">
+            <div class="trade-menu-label">배송지</div>
+            <div class="trade-menu-label-sub">기본 배송지 등</div>
+          </router-link>
+        </div>
+      </section>
+
       <section class="management-section">
         <div class="section-header">
           <div>
@@ -438,6 +465,65 @@ onMounted(() => {
 .avatar.editable:hover .avatar-overlay { opacity: 1; }
 
 .avatar-hint { font-size: 11px; color: var(--color-text-light); }
+
+/* ── 나의 거래 섹션 ── */
+.trade-section {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+}
+
+.trade-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.trade-menu-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 16px;
+  background: var(--color-background-elevated);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.trade-menu-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-soft);
+}
+
+.trade-menu-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-light);
+  margin-bottom: 8px;
+}
+
+.trade-menu-label-sub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.trade-menu-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text-strong);
+}
+
+.trade-menu-value span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-left: 2px;
+}
 
 .header-info h2 { font-size: 22px; margin-bottom: 8px; }
 

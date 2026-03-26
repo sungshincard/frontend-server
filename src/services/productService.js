@@ -40,6 +40,10 @@ const productService = {
   getRecentSaleCards() {
     return apiClient.get('/v1/sale-cards/recent');
   },
+  
+  getMySaleCards() {
+    return apiClient.get('/v1/sale-cards/me');
+  },
 
   createSaleCard(data) {
     return apiClient.post('/v1/sale-cards', data);

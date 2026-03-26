@@ -14,6 +14,8 @@ import Checkout from '../views/Checkout.vue';
 import Watchlist from '../views/Watchlist.vue';
 import StoreView from '../views/StoreView.vue';
 import Orders from '../views/Orders.vue';
+import PurchaseHistory from '../views/PurchaseHistory.vue';
+import SalesHistory from '../views/SalesHistory.vue';
 import OrderDetail from '../views/OrderDetail.vue';
 import OrderSuccess from '../views/OrderSuccess.vue';
 import OrderFail from '../views/OrderFail.vue';
@@ -68,6 +70,16 @@ const routes = [
     path: '/orders',
     name: 'Orders',
     component: Orders
+  },
+  {
+    path: '/mypage/orders/buy',
+    name: 'PurchaseHistory',
+    component: PurchaseHistory
+  },
+  {
+    path: '/mypage/orders/sell',
+    name: 'SalesHistory',
+    component: SalesHistory
   },
   {
     path: '/orders/:orderId',

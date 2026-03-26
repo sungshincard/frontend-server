@@ -1,10 +1,19 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { mockOrders } from '../data/catalog'
 
 const router = useRouter()
+const route = useRoute()
 const activeTab = ref('BUY')
+
+onMounted(() => {
+  if (route.query.type === 'sell') {
+    activeTab.value = 'SELL'
+  } else {
+    activeTab.value = 'BUY'
+  }
+})
 
 const orders = computed(() => mockOrders)
 const statusLabelMap = {
