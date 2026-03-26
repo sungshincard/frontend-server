@@ -28,7 +28,7 @@ const routes = [
     children: [
       { path: '', redirect: '/mypage/profile' },
       { path: 'profile', name: 'MyProfile', component: () => import('@/views/mypage/ProfileView.vue') },
-      { path: 'orders', name: 'PurchaseHistory', component: () => import('@/views/mypage/OrderHistory.vue') },
+      { path: 'orders', name: 'PurchaseHistory', component: () => import('@/views/mypage/PurchaseHistory.vue') },
       { path: 'sales', name: 'SalesHistory', component: () => import('@/views/mypage/SalesHistory.vue') },
       { path: 'watchlist', name: 'MyWatchlist', component: () => import('@/views/mypage/Watchlist.vue') },
       { path: 'addresses', name: 'MyAddresses', component: () => import('@/views/mypage/AddressBook.vue') },
