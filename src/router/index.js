@@ -11,15 +11,11 @@ import CardDetail from '../views/CardDetail.vue';
 import SaleCardNew from '../views/SaleCardNew.vue';
 import SaleCardDetail from '../views/SaleCardDetail.vue';
 import Checkout from '../views/Checkout.vue';
-import Watchlist from '../views/Watchlist.vue';
 import StoreView from '../views/StoreView.vue';
 import Orders from '../views/Orders.vue';
-import PurchaseHistory from '../views/PurchaseHistory.vue';
-import SalesHistory from '../views/SalesHistory.vue';
 import OrderDetail from '../views/OrderDetail.vue';
 import OrderSuccess from '../views/OrderSuccess.vue';
 import OrderFail from '../views/OrderFail.vue';
-import AddressBook from '../views/AddressBook.vue';
 import CardRequest from '../views/CardRequest.vue';
 import AdminLayout from '../layouts/AdminLayout.vue';
 import AdminHome from '../views/admin/AdminHome.vue';
@@ -29,6 +25,14 @@ import DisputeForm from '../views/DisputeForm.vue';
 import Policy from '../views/Policy.vue';
 import { useAuthStore } from '../stores/auth';
 import { toast } from 'vue3-toastify';
+
+// MyPage Nested Components
+import ProfileView from '../views/mypage/ProfileView.vue';
+import OrderHistory from '../views/mypage/OrderHistory.vue';
+import SalesHistory from '../views/mypage/SalesHistory.vue';
+import Watchlist from '../views/mypage/Watchlist.vue';
+import AddressBook from '../views/mypage/AddressBook.vue';
+import SettlementView from '../views/mypage/SettlementView.vue';
 
 const routes = [
   {
@@ -48,38 +52,32 @@ const routes = [
   },
   {
     path: '/mypage',
-    name: 'MyPage',
-    component: MyPage
-  },
-  {
-    path: '/mypage/account/verify',
-    name: 'AccountVerify',
-    component: AccountVerify
-  },
-  {
-    path: '/mypage/account/edit',
-    name: 'AccountEdit',
-    component: AccountEdit
-  },
-  {
-    path: '/watchlist',
-    name: 'Watchlist',
-    component: Watchlist
+    component: MyPage,
+    meta: { requiresAuth: true },
+    children: [
+      { path: '', redirect: '/mypage/profile' },
+      { path: 'profile', name: 'MyProfile', component: ProfileView },
+      { path: 'orders', name: 'PurchaseHistory', component: OrderHistory },
+      { path: 'sales', name: 'SalesHistory', component: SalesHistory },
+      { path: 'watchlist', name: 'MyWatchlist', component: Watchlist },
+      { path: 'addresses', name: 'MyAddresses', component: AddressBook },
+      { path: 'settlement', name: 'Settlement', component: SettlementView },
+      {
+        path: 'account/verify',
+        name: 'AccountVerify',
+        component: AccountVerify
+      },
+      {
+        path: 'account/edit',
+        name: 'AccountEdit',
+        component: AccountEdit
+      },
+    ]
   },
   {
     path: '/orders',
     name: 'Orders',
     component: Orders
-  },
-  {
-    path: '/mypage/orders/buy',
-    name: 'PurchaseHistory',
-    component: PurchaseHistory
-  },
-  {
-    path: '/mypage/orders/sell',
-    name: 'SalesHistory',
-    component: SalesHistory
   },
   {
     path: '/orders/:orderId',
@@ -95,11 +93,6 @@ const routes = [
     path: '/orders/:orderId/dispute',
     name: 'DisputeForm',
     component: DisputeForm
-  },
-  {
-    path: '/addresses',
-    name: 'AddressBook',
-    component: AddressBook
   },
   {
     path: '/card-requests/new',
@@ -193,7 +186,9 @@ router.beforeEach((to, from, next) => {
     to.path.startsWith('/cards/group/') ||
     to.path.startsWith('/sale-cards/') ||
     (/^\/cards\/[^/]+$/.test(to.path) && !to.path.startsWith('/cards/group/'));
-  const authRequired = !isPublicPage;
+  
+  // Custom check for nested mypage if necessary
+  const authRequired = !isPublicPage || to.matched.some(record => record.meta.requiresAuth);
 
   if (authRequired && !authStore.isAuthenticated) {
     toast.error('로그인이 필요한 서비스입니다.');

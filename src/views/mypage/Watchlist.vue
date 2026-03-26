@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import productService from '../services/productService'
+import productService from '../../services/productService'
 
 const router = useRouter()
 const watchlist = ref([])
@@ -25,7 +25,7 @@ const goCard = (id) => router.push(`/cards/${id}`)
 </script>
 
 <template>
-  <div class="watchlist-page container">
+  <div class="watchlist-page">
     <div class="page-head">
       <div>
         <p class="eyebrow">Collection</p>
@@ -71,7 +71,7 @@ const goCard = (id) => router.push(`/cards/${id}`)
 
 <style scoped>
 .watchlist-page {
-  padding: 40px 0 80px;
+  padding: 0 0 60px;
 }
 
 .page-head {

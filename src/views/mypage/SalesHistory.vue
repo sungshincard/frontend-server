@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import productService from '../services/productService'
-import { getImageUrl } from '../services/api'
+import productService from '../../services/productService'
+import { getImageUrl } from '../../services/api'
 
 const router = useRouter()
 const isLoading = ref(true)
@@ -30,11 +30,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="orders-page container">
+  <div class="orders-page">
     <div class="page-head">
       <div>
         <p class="eyebrow">Inventory</p>
-        <h1>판매 내역 / 상점 관리</h1>
+        <h1>판매 내역</h1>
         <p>내가 등록한 상품의 상태를 실시간으로 확인하고 관리합니다.</p>
       </div>
     </div>
@@ -71,7 +71,7 @@ onMounted(async () => {
 
 <style scoped>
 .orders-page {
-  padding: 40px 0 80px;
+  padding: 0 0 60px;
 }
 
 .eyebrow {

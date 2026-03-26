@@ -53,7 +53,7 @@ const goDispute = () => router.push(`/orders/${route.params.orderId}/dispute`)
         <h1>거래 상세</h1>
         <p>{{ order.title }} 주문의 상태와 이력을 확인합니다.</p>
       </div>
-      <button type="button" class="back-button" @click="router.push('/orders')">거래 목록으로</button>
+      <button type="button" class="back-button" @click="router.push('/mypage/orders')">거래 목록으로</button>
     </div>
 
     <section class="detail-layout">

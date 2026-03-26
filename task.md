@@ -115,6 +115,20 @@
   - [ ] 등록된 운송장 번호 조회용 UI 패널
   - [ ] Timeline 스타일의 배송/진행 과정(결제완료 -> 발송 -> 도착 등) 렌더링 컴포넌트
   - [ ] **[New] 실시간 결제/배송 상태 업데이트 (SSE 알림 연동 및 UI 반영)**
+  ## [Phase 4+] 마이페이지 레이아웃 고도화 (사이드바 & 중첩 라우팅)
+- [o] **레이아웃 구조 개편 (Side Menu + Content Area)**
+  - [o] `MyPage.vue` 레이아웃을 `flex` 기반 사이드바 구조로 전환
+  - [o] 반응형(1024px 이하) 모바일 상단 가로 탭/드롭다운 UI 구현
+- [o] **Vue Router 중첩 라우팅 (Nested Routes) 설정**
+  - [o] `router/index.js` 내 `/mypage` 하위 children 라우트 정의
+  - [o] 콘텐츠 영역 `<router-view>` 배치 및 메뉴 하이라이트(Active Class) 처리
+- [o] **기존 컴포넌트 분리 및 기능 이전**
+  - [o] [NEW] `ProfileView.vue` (프로필 조회/수정 및 상점 정보 통합)
+  - [o] [MOVE] `OrderHistory.vue` (구매 내역 - 이전 `PurchaseHistory.vue`)
+  - [o] [MOVE] `SalesHistory.vue` (판매 관리 - 상품 출품 상태 관리 기반)
+  - [o] [MOVE] `Watchlist.vue` (관심 상품 관리)
+  - [o] [MOVE] `AddressBook.vue` (배송지 관리 연동)
+  - [o] [NEW] `Settlement.vue` (정산 관리 뼈대 구현)
 
 ---
 
@@ -133,7 +147,6 @@
       - [ ] 정산 완료 시 차감된 수수료 내역 명세서 툴팁 제공
   - [ ] [판매자용] 발송 처리 및 택배사 배송 운송장 번호 등록 폼 모달 오픈 및 값 전송
   - [ ] [구매자용] 물품 수령 후 수동 **구매 확정 버튼** 및 기한 초과 알림 액션 API 연결
-
 ---
 
 133: ## [Phase 6] 시세 / 소통 / 신뢰도 / 알림

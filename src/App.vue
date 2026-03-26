@@ -165,7 +165,7 @@ watch(() => authStore.isAuthenticated, (newVal) => {
           <router-link to="/cards">카드 탐색</router-link>
           <router-link v-if="authStore.isAuthenticated" to="/mypage">마이페이지</router-link>
           
-          <router-link v-if="authStore.isAuthenticated" to="/watchlist" class="nav-icon-button" title="관심 카드">
+          <router-link v-if="authStore.isAuthenticated" to="/mypage/watchlist" class="nav-icon-button" title="관심 카드">
             <svg class="nav-icon-svg heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12.001 20.727 10.55 19.41C5.4 14.74 2 11.658 2 7.875 2 4.792 4.42 2.5 7.5 2.5c1.74 0 3.41.81 4.5 2.09A6.026 6.026 0 0 1 16.5 2.5C19.58 2.5 22 4.792 22 7.875c0 3.783-3.4 6.865-8.55 11.547l-1.449 1.305Z"/>
             </svg>

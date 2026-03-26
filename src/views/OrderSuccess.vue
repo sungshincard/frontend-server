@@ -43,7 +43,7 @@ onMounted(async () => {
 })
 
 const goHome = () => router.push('/')
-const goOrders = () => router.push('/my/orders')
+const goOrders = () => router.push('/mypage/orders')
 </script>
 
 <template>

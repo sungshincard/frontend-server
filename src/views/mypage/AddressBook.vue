@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import authService from '../services/authService'
+import authService from '../../services/authService'
 
 const addresses = ref([])
 const showModal = ref(false)
@@ -95,7 +95,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="address-page container">
+  <div class="address-page">
     <div class="page-head">
       <div>
         <p class="eyebrow">Address</p>
@@ -161,7 +161,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.address-page { padding: 40px 0 80px; }
+.address-page { padding: 0 0 60px; }
 .page-head {
   display: flex; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 24px;
 }

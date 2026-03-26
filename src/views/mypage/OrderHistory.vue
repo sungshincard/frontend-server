@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import orderService from '../services/orderService'
+import orderService from '../../services/orderService'
 
 const router = useRouter()
 const isLoading = ref(true)
@@ -37,7 +37,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="orders-page container">
+  <div class="orders-page">
     <div class="page-head">
       <div>
         <p class="eyebrow">Purchases</p>
@@ -71,7 +71,7 @@ onMounted(async () => {
 
 <style scoped>
 .orders-page {
-  padding: 40px 0 80px;
+  padding: 0 0 60px;
 }
 
 .eyebrow {
