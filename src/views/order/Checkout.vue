@@ -60,6 +60,32 @@ const agreeEscrow = ref(false)
 const agreePolicy = ref(false)
 const paymentMethod = ref('CARD')
  
+const useNewAddress = ref(false)
+const newAddressForm = ref({
+  receiverName: '',
+  receiverPhone: '',
+  zipCode: '',
+  address: '',
+  detailAddress: ''
+})
+
+const execDaumPostcode = () => {
+  new window.daum.Postcode({
+    oncomplete: (data) => {
+      let addr = ''
+      if (data.userSelectedType === 'R') {
+        addr = data.roadAddress
+      } else {
+        addr = data.jibunAddress
+      }
+      newAddressForm.value.address = addr
+      newAddressForm.value.zipCode = data.zonecode
+      // focus on detail address
+      document.getElementById('detailAddress')?.focus()
+    }
+  }).open()
+}
+ 
 const paymentOptions = [
   { value: 'CARD', label: '카드' },
   { value: 'BANK_TRANSFER', label: '계좌이체' },
@@ -95,15 +121,36 @@ const handlePayment = async () => {
 
   try {
     // 1. 백엔드 주문 생성 요청
-    const orderData = {
+    let orderData = {
       saleCardId: saleCardId.value,
       tradeType: tradeType.value,
-      receiverName: activeAddress.value?.receiverName || authStore.user?.name || '',
-      receiverPhone: activeAddress.value?.receiverPhone || authStore.user?.phoneNumber || '',
-      zipCode: activeAddress.value?.zipCode || '',
-      address: activeAddress.value?.address || '',
-      detailAddress: activeAddress.value?.detailAddress || '',
       shippingMessage: '문 앞에 놓아주세요'
+    }
+
+    if (useNewAddress.value) {
+      orderData = {
+        ...orderData,
+        receiverName: newAddressForm.value.receiverName,
+        receiverPhone: newAddressForm.value.receiverPhone,
+        zipCode: newAddressForm.value.zipCode,
+        address: newAddressForm.value.address,
+        detailAddress: newAddressForm.value.detailAddress
+      }
+      
+      // Basic validation
+      if (!orderData.receiverName || !orderData.address) {
+        alert('배송지 정보를 모두 입력해 주세요.')
+        return
+      }
+    } else {
+      orderData = {
+        ...orderData,
+        receiverName: activeAddress.value?.receiverName || authStore.user?.name || '',
+        receiverPhone: activeAddress.value?.receiverPhone || authStore.user?.phoneNumber || '',
+        zipCode: activeAddress.value?.zipCode || '',
+        address: activeAddress.value?.address || '',
+        detailAddress: activeAddress.value?.detailAddress || ''
+      }
     }
 
     const orderResponse = await orderService.createOrder(orderData)
@@ -203,9 +250,30 @@ const handlePayment = async () => {
         <div v-if="tradeType === 'DELIVERY'" class="section-block">
           <div class="block-head">
             <h2>배송지 선택</h2>
-            <span>기본 배송지 또는 최근 사용 배송지 선택</span>
+            <span>기본 배송지 선택 또는 직접 입력</span>
           </div>
-          <div class="address-grid">
+
+          <!-- Address Type Tabs -->
+          <div class="address-tabs">
+            <button 
+              type="button" 
+              class="address-tab-btn" 
+              :class="{ active: !useNewAddress }"
+              @click="useNewAddress = false"
+            >
+              기존 주소 불러오기
+            </button>
+            <button 
+              type="button" 
+              class="address-tab-btn" 
+              :class="{ active: useNewAddress }"
+              @click="useNewAddress = true"
+            >
+              새 주소 직접 입력
+            </button>
+          </div>
+
+          <div v-if="!useNewAddress" class="address-grid animate-fade-in">
             <button
               v-for="addr in addresses"
               :key="addr.id"
@@ -221,6 +289,35 @@ const handlePayment = async () => {
               <p>{{ addr.receiverPhone }}</p>
               <small>{{ addr.address }} {{ addr.detailAddress }}</small>
             </button>
+            <div v-if="addresses.length === 0" class="empty-address">
+              <p>등록된 주소가 없습니다. 새 주소를 입력해 주세요.</p>
+            </div>
+          </div>
+
+          <!-- New Address Form -->
+          <div v-else class="new-address-form animate-fade-in">
+            <div class="form-row split">
+              <div class="input-group">
+                <label>수령인</label>
+                <input v-model="newAddressForm.receiverName" type="text" placeholder="이름을 입력하세요">
+              </div>
+              <div class="input-group">
+                <label>연락처</label>
+                <input v-model="newAddressForm.receiverPhone" type="text" placeholder="휴대폰 번호">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="input-group">
+                <label>주소</label>
+                <div class="zip-row">
+                  <input v-model="newAddressForm.zipCode" type="text" readonly placeholder="우편번호">
+                  <button type="button" class="zip-btn" @click="execDaumPostcode">주소 찾기</button>
+                </div>
+                <input v-model="newAddressForm.address" type="text" readonly placeholder="주소" class="full-addr">
+                <input id="detailAddress" v-model="newAddressForm.detailAddress" type="text" placeholder="상세 주소를 입력하세요">
+              </div>
+            </div>
           </div>
         </div>
 
@@ -622,6 +719,128 @@ const handlePayment = async () => {
   border: 1px dashed var(--color-primary);
 }
 
+/* Address Tabs Styling */
+.address-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: var(--color-panel-soft);
+  padding: 6px;
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
+}
+
+.address-tab-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-weight: 800;
+  font-size: 0.95rem;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.address-tab-btn.active {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.empty-address {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-text-subtle);
+  background: var(--color-panel-soft);
+  border-radius: 24px;
+  border: 1px dashed var(--color-border);
+}
+
+/* New Address Form Styling */
+.new-address-form {
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--color-panel-soft);
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row.split {
+  flex-direction: row;
+}
+
+.form-row.split .input-group {
+  flex: 1;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.input-group input {
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text-strong);
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+}
+
+.zip-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.zip-row input {
+  flex: 1;
+}
+
+.zip-btn {
+  padding: 0 20px;
+  background: var(--color-text-strong);
+  color: var(--color-primary-text);
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.full-addr {
+  margin-bottom: 8px;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 1100px) {
   .checkout-layout {
     grid-template-columns: 1fr;
@@ -640,6 +859,10 @@ const handlePayment = async () => {
     grid-template-columns: 1fr;
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .form-row.split {
+    flex-direction: column;
   }
 
   .submit-row {
