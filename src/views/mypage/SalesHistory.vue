@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import productService from '@/services/productService'
 import { getImageUrl } from '@/services/api'
@@ -14,6 +14,18 @@ const statusLabelMap = {
   SOLD: '판매완료',
   HIDDEN: '숨김',
 }
+
+const selectedStatus = ref('ALL')
+const statusTabs = [
+  { label: '전체', value: 'ALL' },
+  { label: '판매중', value: 'ACTIVE' },
+  { label: '판매완료', value: 'SOLD' },
+]
+
+const filteredListings = computed(() => {
+  if (selectedStatus.value === 'ALL') return listings.value
+  return listings.value.filter(item => item.status === selectedStatus.value)
+})
 
 const goDetail = (id) => router.push(`/sale-cards/${id}`)
 
@@ -42,11 +54,23 @@ onMounted(fetchData)
       </div>
     </div>
 
+    <div class="tabs-container">
+      <button 
+        v-for="tab in statusTabs" 
+        :key="tab.value"
+        class="tab-button"
+        :class="{ active: selectedStatus === tab.value }"
+        @click="selectedStatus = tab.value"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
     <div v-if="isLoading" class="loading">데이터를 불러오는 중...</div>
     
     <div v-else class="list-container">
-      <div v-if="listings.length > 0" class="orders-list">
-        <article v-for="item in listings" :key="item.id" class="order-card">
+      <div v-if="filteredListings.length > 0" class="orders-list">
+        <article v-for="item in filteredListings" :key="item.id" class="order-card">
           <div class="order-visual">
             <img v-if="item.imageUrls && item.imageUrls.length > 0" :src="getImageUrl(item.imageUrls[0])" :alt="item.title">
             <div v-else class="no-img">No Image</div>
@@ -78,6 +102,16 @@ onMounted(fetchData)
 .eyebrow { margin: 0 0 8px; color: var(--color-primary); font-size: 0.84rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
 .page-head h1 { color: var(--color-text-strong); margin-bottom: 8px; }
 .page-head p { color: var(--color-text-muted); margin-bottom: 24px; }
+
+.tabs-container { display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 1px solid var(--color-border); padding-bottom: 12px; }
+.tab-button {
+  padding: 8px 20px; border: none; background: transparent; color: var(--color-text-muted); font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.2s; position: relative;
+}
+.tab-button:hover { color: var(--color-text-strong); }
+.tab-button.active { color: var(--color-primary); }
+.tab-button.active::after {
+  content: ''; position: absolute; bottom: -13px; left: 0; right: 0; height: 3px; background: var(--color-primary);
+}
 
 .orders-list { display: grid; gap: 14px; }
 .order-card {

@@ -24,7 +24,7 @@ const menuGroups = [
     ]
   },
   {
-    title: '판매 정보',
+    title: '정산 정보',
     items: [
       { name: '정산 관리', path: '/mypage/settlement', icon: '💰' },
     ]
@@ -172,7 +172,7 @@ const isActive = (path) => currentPath.value === path;
 /* Content Styling */
 .mypage-content {
   flex: 1;
-  background: white;
+  background: var(--color-background);
   min-height: 600px;
 }
 
