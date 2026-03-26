@@ -103,6 +103,9 @@ onMounted(fetchData)
       <section v-if="activeTab === 'sold'" class="list-container">
         <div v-if="soldOrders.length > 0" class="orders-list">
           <article v-for="order in soldOrders" :key="order.id" class="order-card sold">
+            <div class="order-visual">
+              <img :src="getImageUrl(order.thumbnailUrl)" :alt="order.saleCardTitle">
+            </div>
             <div class="order-main">
               <span class="status-badge" :class="order.status.toLowerCase()">
                 {{ orderStatusMap[order.status] || order.status }}
@@ -148,7 +151,7 @@ onMounted(fetchData)
   display: grid; grid-template-columns: 100px 1fr auto; gap: 22px; padding: 22px;
   border: 1px solid var(--color-border); border-radius: 24px; background: var(--color-panel); box-shadow: var(--shadow-soft); align-items: center;
 }
-.order-card.sold { grid-template-columns: 1fr auto; }
+.order-card.sold { grid-template-columns: 100px 1fr auto; }
 
 .order-visual {
   width: 100px; height: 100px; border-radius: 14px; overflow: hidden; border: 1px solid var(--color-border); background: var(--color-panel-soft);

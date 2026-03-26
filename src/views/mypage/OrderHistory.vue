@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import orderService from '../../services/orderService'
+import orderService from '@/services/orderService'
+import { getImageUrl } from '@/services/api'
 
 const router = useRouter()
 const isLoading = ref(true)
@@ -49,16 +50,19 @@ onMounted(async () => {
     <div v-if="isLoading" class="loading">불러오는 중...</div>
     <section v-else-if="orders && orders.length > 0" class="orders-list">
       <article v-for="order in orders" :key="order.id" class="order-card">
+        <div class="order-visual">
+          <img :src="getImageUrl(order.thumbnailUrl)" :alt="order.saleCardTitle">
+        </div>
         <div class="order-main">
           <span class="status-badge" :class="order.status.toLowerCase()">
             {{ statusLabelMap[order.status] || order.status }}
           </span>
-          <strong>{{ order.title }}</strong>
-          <p>{{ tradeTypeLabelMap[order.tradeType] || order.tradeType }} · {{ order.orderedAt }}</p>
-          <small>판매자: {{ order.seller }}</small>
+          <strong>{{ order.saleCardTitle }}</strong>
+          <p>{{ tradeTypeLabelMap[order.tradeType] || order.tradeType }} · {{ new Date(order.orderedAt).toLocaleDateString() }}</p>
+          <small>판매자: @{{ order.sellerNickname }}</small>
         </div>
         <div class="order-side">
-          <strong>{{ order.price }}</strong>
+          <strong>{{ (order.totalPrice || 0).toLocaleString() }}원</strong>
           <button type="button" class="detail-button" @click="goOrder(order.id)">거래 보기</button>
         </div>
       </article>
@@ -99,14 +103,30 @@ onMounted(async () => {
 }
 
 .order-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 22px;
   padding: 22px;
   border: 1px solid var(--color-border);
   border-radius: 24px;
   background: var(--color-panel);
   box-shadow: var(--shadow-soft);
+  align-items: center;
+}
+
+.order-visual {
+  width: 100px;
+  height: 100px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel-soft);
+}
+
+.order-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .order-main,

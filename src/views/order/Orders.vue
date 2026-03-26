@@ -1,11 +1,28 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { mockOrders } from '@/data/catalog'
+import orderService from '@/services/orderService'
+import { getImageUrl } from '@/services/api'
 
 const router = useRouter()
 const route = useRoute()
-const activeTab = ref('BUY')
+const activeTab = ref('BUY') // 'BUY' or 'SELL'
+const isLoading = ref(true)
+const orders = ref([])
+
+const fetchOrders = async () => {
+  try {
+    isLoading.value = true
+    const response = activeTab.value === 'BUY' 
+      ? await orderService.getPurchaseHistory()
+      : await orderService.getSalesHistory()
+    orders.value = response.data || []
+  } catch (err) {
+    console.error('Failed to fetch orders:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 onMounted(() => {
   if (route.query.type === 'sell') {
@@ -13,20 +30,20 @@ onMounted(() => {
   } else {
     activeTab.value = 'BUY'
   }
+  fetchOrders()
 })
 
-const orders = computed(() => mockOrders)
+watch(activeTab, () => {
+  fetchOrders()
+})
 const statusLabelMap = {
-  PAYMENT_PENDING: '결제대기',
-  PAID: '결제완료',
-  WAITING_FOR_SELLER: '발송대기',
+  PENDING: '입금대기',
+  PAID: '발송대기',
   SHIPPED: '배송중',
   DELIVERED: '배송완료',
   PURCHASE_CONFIRMED: '구매확정',
-  COMPLETED: '거래완료',
-  CANCELED: '취소됨',
+  CANCELLED: '취소됨',
   DISPUTED: '분쟁중',
-  REFUNDED: '환불완료',
 }
 const tradeTypeLabelMap = {
   DELIVERY: '택배거래',
@@ -51,20 +68,29 @@ const goOrder = (orderId) => router.push(`/orders/${orderId}`)
       <button type="button" class="tab-chip" :class="{ active: activeTab === 'SELL' }" @click="activeTab = 'SELL'">판매 내역</button>
     </div>
 
-    <section class="orders-list">
+    <div v-if="isLoading" class="loading-state">데이터를 불러오는 중...</div>
+    <section v-else-if="orders.length > 0" class="orders-list">
       <article v-for="order in orders" :key="order.id" class="order-card">
+        <div class="order-visual">
+          <img :src="getImageUrl(order.thumbnailUrl)" :alt="order.saleCardTitle">
+        </div>
         <div class="order-main">
-          <span class="status-badge">{{ statusLabelMap[order.status] || order.status }}</span>
-          <strong>{{ order.title }}</strong>
-          <p>{{ tradeTypeLabelMap[order.tradeType] || order.tradeType }} · {{ order.orderedAt }}</p>
-          <small>{{ activeTab === 'BUY' ? '판매자' : '구매자' }}: {{ order.seller }}</small>
+          <span class="status-badge" :class="order.status.toLowerCase()">
+            {{ statusLabelMap[order.status] || order.status }}
+          </span>
+          <strong>{{ order.saleCardTitle }}</strong>
+          <p>{{ tradeTypeLabelMap[order.tradeType] || order.tradeType }} · {{ new Date(order.orderedAt).toLocaleDateString() }}</p>
+          <small>{{ activeTab === 'BUY' ? '판매자' : '구매자' }}: @{{ activeTab === 'BUY' ? order.sellerNickname : order.buyerNickname }}</small>
         </div>
         <div class="order-side">
-          <strong>{{ order.price }}</strong>
+          <strong>{{ (order.totalPrice || 0).toLocaleString() }}원</strong>
           <button type="button" class="detail-button" @click="goOrder(order.id)">거래 보기</button>
         </div>
       </article>
     </section>
+    <div v-else class="empty-state">
+      <p>{{ activeTab === 'BUY' ? '구매한' : '판매한' }} 내역이 없습니다.</p>
+    </div>
   </div>
 </template>
 
@@ -125,14 +151,30 @@ const goOrder = (orderId) => router.push(`/orders/${orderId}`)
 }
 
 .order-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 22px;
   padding: 22px;
   border: 1px solid var(--color-border);
   border-radius: 24px;
   background: var(--color-panel);
   box-shadow: var(--shadow-soft);
+  align-items: center;
+}
+
+.order-visual {
+  width: 100px;
+  height: 100px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel-soft);
+}
+
+.order-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .order-main,
@@ -152,11 +194,15 @@ const goOrder = (orderId) => router.push(`/orders/${orderId}`)
   font-weight: 700;
 }
 
-.detail-button {
-  padding: 10px 16px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background-elevated);
-  color: var(--color-text-strong);
+.status-badge.paid { background: #dcfce7; color: #166534; }
+.status-badge.shipped { background: #fef3c7; color: #92400e; }
+.status-badge.delivered, .status-badge.purchase_confirmed { background: #e0f2fe; color: #0c4a6e; }
+.status-badge.cancelled { background: #fee2e2; color: #991b1b; }
+
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 80px 0;
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 720px) {
