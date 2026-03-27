@@ -74,6 +74,12 @@ const isActive = (path) => {
           <h2 class="page-title">{{ router.currentRoute.value.name || 'Dashboard' }}</h2>
         </div>
         <div class="header-right">
+          <router-link to="/" class="btn-goto-home" title="사용자 홈페이지로 돌아가기">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </router-link>
           <div class="theme-toggle-wrapper">
             <button type="button" class="btn-theme-minimal" @click="themeStore.toggleTheme">
               <svg v-if="themeStore.theme === 'light'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -324,6 +330,22 @@ const isActive = (path) => {
 
 .btn-exit:hover {
   color: #ef4444;
+}
+
+.btn-goto-home {
+  padding: 8px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  display: flex;
+  transition: all 0.2s;
+}
+
+.btn-goto-home:hover {
+  background-color: var(--color-panel-soft);
+  color: var(--color-primary);
 }
 
 .admin-content-scroller {

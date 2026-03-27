@@ -164,6 +164,7 @@ watch(() => authStore.isAuthenticated, (newVal) => {
           <router-link to="/dex">도감 탐색</router-link>
           <router-link to="/cards">카드 탐색</router-link>
           <router-link v-if="authStore.isAuthenticated" to="/mypage">마이페이지</router-link>
+          <router-link v-if="authStore.userRole === 'ADMIN'" to="/admin" class="nav-admin-link">관리자 페이지</router-link>
           
           <router-link v-if="authStore.isAuthenticated" to="/mypage/watchlist" class="nav-icon-button" title="관심 카드">
             <svg class="nav-icon-svg heart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -530,6 +531,17 @@ watch(() => authStore.isAuthenticated, (newVal) => {
   border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
   color: var(--color-text-strong) !important;
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.nav-admin-link {
+  border: 1px solid rgba(139, 92, 246, 0.3); /* Purple-ish admin color */
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--color-text-strong) !important;
+}
+
+.nav-admin-link:hover {
+  background: rgba(139, 92, 246, 0.2) !important;
+  border-color: rgba(139, 92, 246, 0.5) !important;
 }
 
 .main-content {
