@@ -105,6 +105,21 @@ const handleConfirm = async () => {
   }
 }
 
+// [테스트 전용] 배송 완료 강제 처리
+const isDevMode = import.meta.env.DEV
+
+const handleForceDeliver = async () => {
+  try {
+    if (confirm('[테스트] 이 주문을 배송 완료 상태로 변경하시겠습니까?')) {
+      await orderService.forceDeliverForTest(order.value.id)
+      alert('테스트: 배송 완료 상태로 변경되었습니다.')
+      fetchOrder()
+    }
+  } catch (err) {
+    alert('배송 완료 처리 실패: ' + (err.response?.data?.message || err.message))
+  }
+}
+
 const goListing = () => {
   if (order.value?.saleCardId) router.push(`/saleCards/${order.value.saleCardId}`)
 }
@@ -209,6 +224,14 @@ onMounted(fetchOrder)
           )" type="button" class="primary-btn" @click="handleConfirm">구매 확정</button>
           
           <button type="button" @click="goDispute">문의/분쟁</button>
+
+          <!-- [DEV 전용] 테스트: 배송 완료로 강제 변경 -->
+          <button
+            v-if="isDevMode && order.status === 'SHIPPING'"
+            type="button"
+            class="test-btn"
+            @click="handleForceDeliver"
+          >🛠️ 테스트: 배송완료로 변경</button>
         </div>
       </article>
     </section>
@@ -270,6 +293,7 @@ onMounted(fetchOrder)
 .action-grid button:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
 .primary-btn { background: var(--color-primary) !important; color: var(--color-primary-text) !important; border: 0 !important; }
 .cancel-btn { color: #e74c3c !important; }
+.test-btn { background: #f39c12 !important; color: #fff !important; border: 2px dashed #e67e22 !important; font-style: italic; }
 
 .loading-state, .error-state { padding: 80px; text-align: center; color: var(--color-text-muted); }
 

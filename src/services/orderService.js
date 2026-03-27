@@ -34,6 +34,11 @@ const orderService = {
   
   confirmOrder(orderId) {
     return apiClient.post(`/v1/orders/${orderId}/confirm`);
+  },
+
+  // [테스트 전용] 주문 상태를 SHIPPING → DELIVERED 로 강제 변경
+  forceDeliverForTest(orderId) {
+    return apiClient.post(`/v1/test/orders/${orderId}/delivered`);
   }
 };
 
