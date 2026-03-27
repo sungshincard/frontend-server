@@ -24,8 +24,8 @@ const statusLabelMap = {
 }
 
 const tradeTypeLabelMap = {
-  DELIVERY: '택배거래',
-  FACE_TO_FACE: '대면거래',
+  SHIPPING: '택배거래',
+  DIRECT: '대면거래',
 }
 
 const currentStepIndex = computed(() => {
@@ -86,6 +86,15 @@ const handleShipment = async () => {
 
 const handleConfirm = async () => {
   try {
+    const canConfirm = 
+      (order.value.tradeType === 'SHIPPING' && (order.value.status === 'SHIPPING' || order.value.status === 'DELIVERED')) ||
+      (order.value.tradeType === 'DIRECT' && order.value.status === 'PAYMENT_COMPLETED');
+    
+    if (!canConfirm) {
+      alert('현재 상태에서는 구매 확정이 불가능합니다.');
+      return;
+    }
+
     if (confirm('상품을 수령하셨나요? 구매 확정 후에는 취소 및 환불이 어렵습니다.')) {
       await orderService.confirmOrder(order.value.id)
       alert('구매 확정 처리가 완료되었습니다.')
@@ -194,7 +203,10 @@ onMounted(fetchOrder)
           <button v-if="isSeller && order.status === 'PAYMENT_COMPLETED'" type="button" class="primary-btn" @click="handleShipment">송장 등록</button>
           
           <!-- 구매자 액션 -->
-          <button v-if="isBuyer && (order.status === 'SHIPPING' || order.status === 'DELIVERED')" type="button" class="primary-btn" @click="handleConfirm">구매 확정</button>
+          <button v-if="isBuyer && (
+            (order.tradeType === 'SHIPPING' && (order.status === 'SHIPPING' || order.status === 'DELIVERED')) ||
+            (order.tradeType === 'DIRECT' && order.status === 'PAYMENT_COMPLETED')
+          )" type="button" class="primary-btn" @click="handleConfirm">구매 확정</button>
           
           <button type="button" @click="goDispute">문의/분쟁</button>
         </div>

@@ -19,8 +19,8 @@ const statusLabelMap = {
 }
 
 const tradeTypeLabelMap = {
-  DELIVERY: '택배거래',
-  FACE_TO_FACE: '대면거래',
+  SHIPPING: '택배거래',
+  DIRECT: '대면거래',
 }
 
 const goOrder = (orderId) => router.push(`/orders/${orderId}`)

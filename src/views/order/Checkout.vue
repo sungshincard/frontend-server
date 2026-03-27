@@ -53,7 +53,7 @@ onMounted(async () => {
   }
 })
 
-const tradeType = ref('DELIVERY')
+const tradeType = ref('SHIPPING')
 const selectedAddressId = ref(null)
 const addresses = ref([])
 const agreeEscrow = ref(false)
@@ -144,8 +144,8 @@ const paymentOptions = [
 ]
  
 const deliveryOptions = [
-  { value: 'DELIVERY', label: '택배 거래', note: '안전한 비대면 배송 거래' },
-  { value: 'FACE_TO_FACE', label: '대면 거래', note: '직접 만나서 상품 확인 후 거래' },
+  { value: 'SHIPPING', label: '택배 거래', note: '안전한 비대면 배송 거래' },
+  { value: 'DIRECT', label: '대면 거래', note: '직접 만나서 상품 확인 후 거래' },
 ]
 
 const activeAddress = computed(() => {
@@ -315,7 +315,7 @@ const handlePayment = async () => {
           </div>
         </div>
 
-        <div v-if="tradeType === 'DELIVERY'" class="section-block address-section-musinsa">
+        <div v-if="tradeType === 'SHIPPING'" class="section-block address-section-musinsa">
           <div class="section-top-row">
             <h2>배송지 정보</h2>
           </div>
