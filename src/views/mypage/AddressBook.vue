@@ -16,6 +16,23 @@ const form = ref({
   isDefault: false
 })
 
+const execDaumPostcode = () => {
+  new window.daum.Postcode({
+    oncomplete: (data) => {
+      let addr = ''
+      if (data.userSelectedType === 'R') {
+        addr = data.roadAddress
+      } else {
+        addr = data.jibunAddress
+      }
+      form.value.address1 = addr
+      form.value.zipCode = data.zonecode
+      // focus on detail address
+      document.getElementById('address2')?.focus()
+    }
+  }).open()
+}
+
 const fetchAddresses = async () => {
   try {
     const res = await authService.getAddresses()
@@ -137,14 +154,18 @@ onMounted(() => {
           <label>연락처
             <input v-model="form.recipientPhone" type="text" placeholder="010-1234-5678" required />
           </label>
-          <label>우편번호
-            <input v-model="form.zipCode" type="text" required />
-          </label>
+          <div class="zip-row-wrapper">
+            <label>우편번호</label>
+            <div class="zip-group">
+              <input v-model="form.zipCode" type="text" readonly placeholder="우편번호" required />
+              <button type="button" class="black-zip-btn" @click="execDaumPostcode">우편번호 찾기</button>
+            </div>
+          </div>
           <label>기본 주소
-            <input v-model="form.address1" type="text" required />
+            <input v-model="form.address1" type="text" readonly placeholder="기본 주소" required />
           </label>
           <label>상세 주소
-            <input v-model="form.address2" type="text" />
+            <input id="address2" v-model="form.address2" type="text" placeholder="상세 주소를 입력하세요" />
           </label>
           <label class="checkbox-label">
             <input v-model="form.isDefault" type="checkbox" />
@@ -206,5 +227,15 @@ onMounted(() => {
 .checkbox-label { display: flex !important; flex-direction: row !important; align-items: center; gap: 8px; font-size: 1rem !important; color: var(--color-text-strong) !important; cursor: pointer; }
 .modal-actions { display: flex; justify-content:flex-end; gap: 12px; margin-top: 16px; }
 .cancel-btn { padding: 12px 20px; border-radius: 12px; border: 1px solid var(--color-border); background: transparent; color: var(--color-text-strong); cursor: pointer; }
-.submit-btn { padding: 12px 20px; border-radius: 12px; border: none; background: var(--color-primary); color: #000; font-weight: bold; cursor: pointer; }
+.submit-btn { padding: 12px 20px; border-radius: 12px; border: none; background: var(--color-primary); color: var(--color-primary-text); font-weight: bold; cursor: pointer; }
+
+/* Zip Code Search Button & Group */
+.zip-row-wrapper { display: grid; gap: 6px; }
+.zip-row-wrapper label { font-size: 0.9rem; color: var(--color-text-muted); }
+.zip-group { display: flex; gap: 8px; }
+.zip-group input { flex: 1; }
+.black-zip-btn {
+  padding: 0 16px; border-radius: 12px; background: var(--color-primary); color: var(--color-primary-text); font-weight: 700; font-size: 13px; border: none; cursor: pointer; transition: opacity 0.2s;
+}
+.black-zip-btn:hover { opacity: 0.8; }
 </style>

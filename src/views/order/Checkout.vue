@@ -56,9 +56,17 @@ onMounted(async () => {
 const tradeType = ref('DELIVERY')
 const selectedAddressId = ref(null)
 const addresses = ref([])
-const agreePolicy = ref(false)
 const agreeEscrow = ref(false)
+const agreePolicy = ref(false)
 const paymentMethod = ref('CARD')
+
+const agreeAll = computed({
+  get: () => agreeEscrow.value && agreePolicy.value,
+  set: (val) => {
+    agreeEscrow.value = val
+    agreePolicy.value = val
+  }
+})
  
 const useNewAddress = ref(false) // false: 기본 배송지, true: 신규 배송지
 const isAddressModalOpen = ref(false)
@@ -123,12 +131,16 @@ const openAddressModal = () => { isAddressModalOpen.value = true }
 const closeAddressModal = () => { isAddressModalOpen.value = false }
 const selectAddress = (id) => {
   selectedAddressId.value = id
-  closeAddressModal()
+}
+
+const confirmAddressSelection = () => {
+  if (selectedAddressId.value) {
+    isAddressModalOpen.value = false
+  }
 }
 
 const paymentOptions = [
-  { value: 'CARD', label: '카드' },
-  { value: 'BANK_TRANSFER', label: '계좌이체' },
+  { value: 'CARD', label: '일반 결제', sub: '(신용/체크카드, 계좌이체, 간편결제 등)' },
 ]
  
 const deliveryOptions = [
@@ -184,26 +196,26 @@ const handlePayment = async () => {
     if (useNewAddress.value) {
       orderData = {
         ...orderData,
-        recipientName: newAddressForm.value.recipientName,
-        recipientPhone: newAddressForm.value.recipientPhone,
+        receiverName: newAddressForm.value.recipientName,
+        receiverPhone: newAddressForm.value.recipientPhone,
         zipCode: newAddressForm.value.zipCode,
-        address1: newAddressForm.value.address1,
-        address2: newAddressForm.value.address2
+        address: newAddressForm.value.address1,
+        detailAddress: newAddressForm.value.address2
       }
       
       // Basic validation
-      if (!orderData.recipientName || !orderData.address1 || !orderData.recipientPhone) {
+      if (!orderData.receiverName || !orderData.address || !orderData.receiverPhone) {
         alert('배송지 정보(이름, 연락처, 주소)를 모두 입력해 주세요.')
         return
       }
     } else {
       orderData = {
         ...orderData,
-        recipientName: activeAddress.value?.recipientName || authStore.user?.name || '',
-        recipientPhone: activeAddress.value?.recipientPhone || authStore.user?.phoneNumber || '',
+        receiverName: activeAddress.value?.recipientName || authStore.user?.name || '',
+        receiverPhone: activeAddress.value?.recipientPhone || authStore.user?.phoneNumber || '',
         zipCode: activeAddress.value?.zipCode || '',
-        address1: activeAddress.value?.address1 || '',
-        address2: activeAddress.value?.address2 || ''
+        address: activeAddress.value?.address1 || '',
+        detailAddress: activeAddress.value?.address2 || ''
       }
     }
 
@@ -284,20 +296,22 @@ const handlePayment = async () => {
         <div class="section-block">
           <div class="block-head">
             <h2>거래 방식</h2>
-            <span>번개장터 / 당근처럼 직관적인 선택형 UX</span>
+            <p class="section-subtitle">배송 또는 직접 대면 중 하나를 선택하세요.</p>
           </div>
-          <div class="trade-type-grid">
-            <button
+          <div class="toss-choice-grid">
+            <label
               v-for="option in deliveryOptions"
               :key="option.value"
-              type="button"
-              class="choice-card"
-              :class="{ active: tradeType === option.value }"
-              @click="tradeType = option.value"
+              class="toss-choice-card"
+              :class="{ 'is-active': tradeType === option.value }"
             >
-              <strong>{{ option.label }}</strong>
-              <span>{{ option.note }}</span>
-            </button>
+              <input type="radio" v-model="tradeType" :value="option.value" class="sr-only">
+              <div class="choice-body">
+                <strong>{{ option.label }}</strong>
+                <span>{{ option.note }}</span>
+              </div>
+              <div class="choice-radio-ui"></div>
+            </label>
           </div>
         </div>
 
@@ -437,6 +451,10 @@ const handlePayment = async () => {
                   </div>
                 </div>
               </div>
+              <div class="modal-footer">
+                <button type="button" class="footer-cancel-btn" @click="closeAddressModal">취소</button>
+                <button type="button" class="footer-confirm-btn" @click="confirmAddressSelection">선택 완료</button>
+              </div>
             </div>
           </div>
         </Teleport>
@@ -444,35 +462,66 @@ const handlePayment = async () => {
         <div class="section-block">
           <div class="block-head">
             <h2>결제 수단</h2>
-            <span>payment.payment_method 기준으로 선택합니다.</span>
+            <p class="section-subtitle">안전한 결제를 위해 일반 결제 서비스를 제공합니다.</p>
           </div>
-          <div class="payment-grid">
-            <button
+          <div class="toss-choice-grid">
+            <label
               v-for="option in paymentOptions"
               :key="option.value"
-              type="button"
-              class="payment-chip"
-              :class="{ active: paymentMethod === option.value }"
-              @click="paymentMethod = option.value"
+              class="toss-choice-card payment"
+              :class="{ 'is-active': paymentMethod === option.value }"
             >
-              {{ option.label }}
-            </button>
+              <input type="radio" v-model="paymentMethod" :value="option.value" class="sr-only">
+              <div class="choice-body">
+                <strong>{{ option.label }}</strong>
+                <span v-if="option.sub" class="option-sub">{{ option.sub }}</span>
+              </div>
+              <div class="choice-radio-ui"></div>
+            </label>
           </div>
         </div>
 
         <div class="section-block">
           <div class="block-head">
             <h2>약관 동의</h2>
-            <span>결제 전 정책과 에스크로 안내 확인</span>
+            <p class="section-subtitle">결제 진행을 위해 꼭 필요한 약관입니다.</p>
           </div>
-          <label class="check-row">
-            <input v-model="agreeEscrow" type="checkbox">
-            <span>에스크로 결제 보관 및 구매 확정 후 정산 구조에 동의합니다.</span>
-          </label>
-          <label class="check-row">
-            <input v-model="agreePolicy" type="checkbox">
-            <span>자동 구매 확정, 발송 기한, 분쟁 정책 안내를 확인했습니다.</span>
-          </label>
+          <div class="toss-agreement-box">
+            <label class="agreement-row all">
+              <div class="agreement-check-wrapper">
+                <input type="checkbox" v-model="agreeAll" class="sr-only">
+                <div class="round-checkbox">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <strong>모두 동의하기</strong>
+              </div>
+            </label>
+            <div class="agreement-divider"></div>
+            <label class="agreement-row">
+              <div class="agreement-check-wrapper">
+                <input type="checkbox" v-model="agreeEscrow" class="sr-only">
+                <div class="round-checkbox">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <span>에스크로 결제 보관 및 정산 구조 동의</span>
+              </div>
+            </label>
+            <label class="agreement-row">
+              <div class="agreement-check-wrapper">
+                <input type="checkbox" v-model="agreePolicy" class="sr-only">
+                <div class="round-checkbox">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <span>자동 구매 확정 및 분쟁 정책 안내 확인</span>
+              </div>
+            </label>
+          </div>
         </div>
 
         <div class="submit-row">
@@ -593,6 +642,14 @@ const handlePayment = async () => {
   box-shadow: var(--shadow-soft);
 }
 
+@media (min-width: 1101px) {
+  .checkout-side-card {
+    position: sticky;
+    top: 94px; /* Header 74px + 20px gap */
+    align-self: start;
+  }
+}
+
 .checkout-main-card {
   padding: 24px;
 }
@@ -672,49 +729,119 @@ const handlePayment = async () => {
 }
 
 .block-head {
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 
-.trade-type-grid,
-.payment-grid {
+.section-subtitle {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* Toss Style Choice Grid */
+.toss-choice-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
 }
 
-.choice-card,
-.address-card,
-.payment-chip {
+/* Toss Choice Card */
+.toss-choice-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 24px;
-  border-radius: 24px;
-  text-align: left;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--color-background-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
-.choice-card.active,
-.address-card.active,
-.payment-chip.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-primary-text);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+.toss-choice-card:hover {
   transform: translateY(-2px);
+  border-color: #adb5bd;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-.choice-card strong,
-.payment-chip {
+.toss-choice-card.is-active {
+  background: #f2f7ff;
+  border-color: #3182f6;
+}
+
+.choice-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.choice-body strong {
+  font-size: 1.15rem;
+  color: var(--color-text-strong);
+  transition: color 0.2s;
   font-weight: 800;
 }
 
-.choice-card strong {
-  display: block;
-  margin-bottom: 6px;
-  color: inherit;
+.toss-choice-card.is-active .choice-body strong {
+  color: #3182f6;
 }
 
-.choice-card span {
-  color: inherit;
-  opacity: 0.9;
+.choice-body span {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}
+
+.option-sub {
+  font-size: 0.82rem !important;
+  color: #868e96 !important;
+  font-weight: 500;
+}
+
+/* Choice Radio UI (Dot style) */
+.choice-radio-ui {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  position: relative;
+  transition: all 0.25s;
+}
+
+.toss-choice-card.is-active .choice-radio-ui {
+  border-color: #3182f6;
+  background: #3182f6;
+}
+
+.choice-radio-ui::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toss-choice-card.is-active .choice-radio-ui::after {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* sr-only Utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 /* Musinsa Style Address Section Overhaul */
@@ -797,12 +924,20 @@ const handlePayment = async () => {
 
 .mini-change-btn {
   margin-left: auto;
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  background: #fff;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font-size: 11px;
+  font-weight: 800;
   cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.mini-change-btn:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
 }
 
 .addr-detail {
@@ -931,7 +1066,8 @@ const handlePayment = async () => {
 .musinsa-modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -943,15 +1079,18 @@ const handlePayment = async () => {
   width: 100%;
   max-width: 520px;
   max-height: 85vh;
-  background: #fff;
+  background: var(--color-panel);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.2);
+  border-radius: 28px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
 }
 
 .modal-header {
-  padding: 20px 24px;
-  border-bottom: 2px solid #000;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -959,22 +1098,67 @@ const handlePayment = async () => {
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   font-weight: 900;
+  color: var(--color-text-strong);
 }
 
 .close-btn {
-  background: none;
+  background: var(--color-panel-soft);
   border: none;
-  font-size: 32px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 24px;
   line-height: 1;
   cursor: pointer;
+  color: var(--color-text-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-content {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 0 28px 24px;
+}
+
+.modal-footer {
+  padding: 20px 28px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: 12px;
+  background: var(--color-panel);
+}
+
+.footer-cancel-btn,
+.footer-confirm-btn {
+  flex: 1;
+  padding: 16px;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.footer-cancel-btn {
+  background: var(--color-panel-soft);
+  color: var(--color-text-strong);
+  border: 1px solid var(--color-border);
+}
+
+.footer-confirm-btn {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border: none;
+}
+
+.footer-cancel-btn:hover,
+.footer-confirm-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .modal-search {
@@ -984,10 +1168,12 @@ const handlePayment = async () => {
 
 .modal-search input {
   width: 100%;
-  padding: 12px 16px 12px 40px;
-  border: 1px solid #eee;
-  background: #f5f5f5;
-  font-size: 0.9rem;
+  padding: 16px 16px 16px 44px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-elevated);
+  border-radius: 14px;
+  font-size: 0.95rem;
+  color: var(--color-text-strong);
 }
 
 .search-icon {
@@ -1006,21 +1192,36 @@ const handlePayment = async () => {
 .modal-item {
   display: flex;
   gap: 16px;
-  padding: 20px 0;
-  border-bottom: 1px solid #eee;
+  padding: 24px;
+  border-radius: 18px;
+  background: var(--color-panel-soft);
+  margin-bottom: 12px;
   cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.modal-item:hover {
+  background: var(--color-background-elevated);
+  transform: scale(0.985);
+}
+
+.modal-item.selected {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-panel));
 }
 
 .item-radio .radio-circle {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  border: 1px solid #ccc;
+  border: 2px solid var(--color-border);
+  background: var(--color-background);
   display: block;
 }
 
 .modal-item.selected .radio-circle {
-  border: 6px solid #000;
+  border: 6px solid var(--color-primary);
 }
 
 .item-body { flex: 1; }
@@ -1028,33 +1229,35 @@ const handlePayment = async () => {
 .item-top {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 10px;
+  margin-bottom: 6px;
 }
 
 .item-top strong {
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--color-text-strong);
 }
 
 .badge-sm {
-  font-size: 10px;
-  background: #f0f0f0;
-  padding: 2px 6px;
-  color: #888;
-  font-weight: 700;
+  font-size: 11px;
+  background: var(--color-primary);
+  padding: 3px 8px;
+  color: var(--color-primary-text);
+  border-radius: 4px;
+  font-weight: 800;
 }
 
 .item-addr {
-  font-size: 0.9rem;
-  color: #333;
-  margin-bottom: 2px;
-  line-height: 1.4;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+  line-height: 1.5;
 }
 
 .item-phone {
-  font-size: 0.85rem;
-  color: #999;
+  font-size: 0.88rem;
+  color: var(--color-text-subtle);
 }
 
 .musinsa-secondary-btn {
@@ -1131,17 +1334,82 @@ const handlePayment = async () => {
   color: inherit;
 }
 
-.payment-chip {
-  text-align: center;
-  color: var(--color-text-strong);
+.toss-agreement-box {
+  background: var(--color-background-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 12px;
 }
 
-.check-row {
+.agreement-row {
+  display: block;
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.agreement-row:hover {
+  background: rgba(0,0,0,0.02);
+}
+
+.agreement-check-wrapper {
   display: flex;
-  gap: 10px;
-  align-items: start;
-  padding: 12px 0;
+  align-items: center;
+  gap: 16px;
+}
+
+.agreement-row.all {
+  background: rgba(0,0,0,0.02);
+}
+
+.agreement-row.all strong {
+  font-size: 1.1rem;
+  color: var(--color-text-strong);
+  font-weight: 800;
+}
+
+.agreement-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0 24px;
+}
+
+/* Custom Round Checkbox UI */
+.round-checkbox {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #fff;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+input:checked + .round-checkbox {
+  background: #3182f6;
+  border-color: #3182f6;
+}
+
+.round-checkbox svg {
+  width: 16px;
+  height: 16px;
+  transform: scale(0);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+input:checked + .round-checkbox svg {
+  transform: scale(1);
+}
+
+.agreement-row span {
+  font-size: 1rem;
   color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .submit-row {
@@ -1169,8 +1437,6 @@ const handlePayment = async () => {
 }
 
 .sticky-panel {
-  position: sticky;
-  top: 92px;
   display: grid;
   gap: 14px;
 }
@@ -1386,10 +1652,6 @@ const handlePayment = async () => {
 @media (max-width: 1100px) {
   .checkout-layout {
     grid-template-columns: 1fr;
-  }
-
-  .sticky-panel {
-    position: static;
   }
 }
 
