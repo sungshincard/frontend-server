@@ -10,7 +10,7 @@ const listings = ref([])
 
 const statusLabelMap = {
   ACTIVE: '판매중',
-  RESERVED: '예약중',
+  PENDING: '예약중',
   SOLD: '판매완료',
   HIDDEN: '숨김',
 }
@@ -133,8 +133,8 @@ onMounted(fetchData)
 .status-badge {
   display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 999px; background: var(--color-background-elevated); color: var(--color-text-strong); font-size: 0.75rem; font-weight: 800;
 }
-.status-badge.active, .status-badge.paid { background: #dcfce7; color: #166534; }
-.status-badge.reserved, .status-badge.shipped { background: #fef3c7; color: #92400e; }
+.status-badge.active, .status-badge.payment_completed { background: #dcfce7; color: #166534; }
+.status-badge.pending, .status-badge.shipping { background: #fef3c7; color: #92400e; }
 .status-badge.sold, .status-badge.purchase_confirmed { background: #e0f2fe; color: #0c4a6e; }
 
 .order-side { text-align: right; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }

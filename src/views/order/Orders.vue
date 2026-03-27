@@ -38,8 +38,8 @@ watch(activeTab, () => {
 })
 const statusLabelMap = {
   PENDING: '입금대기',
-  PAID: '발송대기',
-  SHIPPED: '배송중',
+  PAYMENT_COMPLETED: '발송대기',
+  SHIPPING: '배송중',
   DELIVERED: '배송완료',
   PURCHASE_CONFIRMED: '구매확정',
   CANCELLED: '취소됨',
@@ -194,8 +194,8 @@ const goOrder = (orderId) => router.push(`/orders/${orderId}`)
   font-weight: 700;
 }
 
-.status-badge.paid { background: #dcfce7; color: #166534; }
-.status-badge.shipped { background: #fef3c7; color: #92400e; }
+.status-badge.payment_completed { background: #dcfce7; color: #166534; }
+.status-badge.shipping { background: #fef3c7; color: #92400e; }
 .status-badge.delivered, .status-badge.purchase_confirmed { background: #e0f2fe; color: #0c4a6e; }
 .status-badge.cancelled { background: #fee2e2; color: #991b1b; }
 

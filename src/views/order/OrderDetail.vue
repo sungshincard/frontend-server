@@ -12,11 +12,11 @@ const order = ref(null)
 const loading = ref(true)
 const error = ref(null)
 
-const steps = ['PAID', 'SHIPPED', 'DELIVERED', 'PURCHASE_CONFIRMED']
+const steps = ['PAYMENT_COMPLETED', 'SHIPPING', 'DELIVERED', 'PURCHASE_CONFIRMED']
 const statusLabelMap = {
   PENDING: '결제대기',
-  PAID: '결제완료/발송대기',
-  SHIPPED: '배송중',
+  PAYMENT_COMPLETED: '결제완료/발송대기',
+  SHIPPING: '배송중',
   DELIVERED: '배송완료',
   PURCHASE_CONFIRMED: '구매확정',
   CANCELLED: '취소됨',
@@ -30,8 +30,8 @@ const tradeTypeLabelMap = {
 
 const currentStepIndex = computed(() => {
   const map = {
-    PAID: 0,
-    SHIPPED: 1,
+    PAYMENT_COMPLETED: 0,
+    SHIPPING: 1,
     DELIVERED: 2,
     PURCHASE_CONFIRMED: 3
   }
@@ -167,7 +167,8 @@ onMounted(fetchOrder)
         <div>
           <span>송장 정보</span>
           <strong v-if="order.trackingNumber">{{ order.carrier }} {{ order.trackingNumber }}</strong>
-          <strong v-else-if="order.status === 'PAID'">발송 대기 중</strong>
+          <strong v-else-if="order.status === 'PAYMENT_COMPLETED'">발송 대기 중</strong>
+          <strong v-else-if="order.status === 'SHIPPING'">배송 중</strong>
           <strong v-else>-</strong>
         </div>
         <div v-if="order.paidAt">
@@ -187,13 +188,13 @@ onMounted(fetchOrder)
         </div>
         <div class="action-grid">
           <!-- 공통 액션 -->
-          <button v-if="order.status === 'PAID'" type="button" class="cancel-btn" @click="handleCancel">주문 취소</button>
+          <button v-if="order.status === 'PAYMENT_COMPLETED'" type="button" class="cancel-btn" @click="handleCancel">주문 취소</button>
           
           <!-- 판매자 액션 -->
-          <button v-if="isSeller && order.status === 'PAID'" type="button" class="primary-btn" @click="handleShipment">송장 등록</button>
+          <button v-if="isSeller && order.status === 'PAYMENT_COMPLETED'" type="button" class="primary-btn" @click="handleShipment">송장 등록</button>
           
           <!-- 구매자 액션 -->
-          <button v-if="isBuyer && (order.status === 'SHIPPED' || order.status === 'DELIVERED')" type="button" class="primary-btn" @click="handleConfirm">구매 확정</button>
+          <button v-if="isBuyer && (order.status === 'SHIPPING' || order.status === 'DELIVERED')" type="button" class="primary-btn" @click="handleConfirm">구매 확정</button>
           
           <button type="button" @click="goDispute">문의/분쟁</button>
         </div>
@@ -227,7 +228,7 @@ onMounted(fetchOrder)
 .status-badge {
   width: fit-content; padding: 6px 14px; border-radius: 999px; background: var(--color-background-elevated); color: var(--color-text-muted); font-size: 0.9rem; font-weight: 800;
 }
-.status-badge.paid, .status-badge.shipped, .status-badge.delivered {
+.status-badge.payment_completed, .status-badge.shipping, .status-badge.delivered {
   background: var(--color-primary); color: var(--color-primary-text);
 }
 .status-badge.purchase_confirmed {

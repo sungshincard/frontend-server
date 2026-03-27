@@ -10,8 +10,8 @@ const orders = ref([])
  
 const statusLabelMap = {
   PENDING: '입금대기',
-  PAID: '결제완료',
-  SHIPPED: '배송중',
+  PAYMENT_COMPLETED: '결제완료',
+  SHIPPING: '배송중',
   DELIVERED: '배송완료',
   PURCHASE_CONFIRMED: '구매확정',
   CANCELLED: '취소됨',
@@ -155,8 +155,8 @@ onMounted(async () => {
   font-weight: 700;
 }
 
-.status-badge.paid { background: #e0f2fe; color: #0c4a6e; }
-.status-badge.shipped { background: #fef3c7; color: #92400e; }
+.status-badge.payment_completed { background: #e0f2fe; color: #0c4a6e; }
+.status-badge.shipping { background: #fef3c7; color: #92400e; }
 .status-badge.delivered { background: #dcfce7; color: #166534; }
 .status-badge.cancelled { background: #fee2e2; color: #991b1b; }
 

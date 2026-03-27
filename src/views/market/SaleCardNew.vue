@@ -43,7 +43,7 @@ const conditionOptions = [
   { value: 'D', label: '하자 있음' },
 ]
 
-const listingStatuses = ['ACTIVE', 'RESERVED', 'SOLD', 'HIDDEN']
+const listingStatuses = ['ACTIVE', 'PENDING', 'SOLD', 'HIDDEN']
 
 const fetchInitialData = async () => {
   try {
