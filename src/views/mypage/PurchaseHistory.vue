@@ -11,6 +11,7 @@ const orders = ref([])
 const statusLabelMap = {
   PENDING: '입금대기',
   PAYMENT_COMPLETED: '결제완료',
+  PREPARING: '배송준비중',
   SHIPPING: '배송중',
   DELIVERED: '배송완료',
   PURCHASE_CONFIRMED: '구매확정',
@@ -24,6 +25,7 @@ const tradeTypeLabelMap = {
 }
 
 const goOrder = (orderId) => router.push(`/orders/${orderId}`)
+const goDetail = (saleCardId) => router.push(`/sale-cards/${saleCardId}`)
 
 onMounted(async () => {
   try {
@@ -63,7 +65,10 @@ onMounted(async () => {
         </div>
         <div class="order-side">
           <strong>{{ (order.totalPrice || 0).toLocaleString() }}원</strong>
-          <button type="button" class="detail-button" @click="goOrder(order.id)">거래 보기</button>
+          <div class="actions">
+            <button type="button" class="detail-button" @click="goDetail(order.saleCardId)">상세 보기</button>
+            <button type="button" class="detail-button primary" @click="goOrder(order.id)">거래 보기</button>
+          </div>
         </div>
       </article>
     </section>
@@ -131,8 +136,8 @@ onMounted(async () => {
 
 .order-main,
 .order-side {
-  display: grid;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
 }
 
 .order-main strong {
@@ -158,11 +163,14 @@ onMounted(async () => {
 .status-badge.payment_completed { background: #e0f2fe; color: #0c4a6e; }
 .status-badge.shipping { background: #fef3c7; color: #92400e; }
 .status-badge.delivered { background: #dcfce7; color: #166534; }
+.status-badge.purchase_confirmed { background: #e0e7ff; color: #3730a3; }
 .status-badge.cancelled { background: #fee2e2; color: #991b1b; }
+.status-badge.disputed { background: #fef3c7; color: #78350f; }
 
 .order-side {
   text-align: right;
-  align-content: space-between;
+  justify-content: space-between;
+  height: 100%;
 }
 
 .order-side strong {
@@ -170,18 +178,26 @@ onMounted(async () => {
   color: var(--color-text-strong);
 }
 
+.actions { display: flex; gap: 8px; margin-top: 12px; }
+
 .detail-button {
-  padding: 10px 20px;
+  padding: 8px 16px;
   border: 1px solid var(--color-border);
   background: var(--color-background-elevated);
   color: var(--color-text-strong);
   border-radius: 999px;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .detail-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.detail-button.primary {
   background: var(--color-primary);
   border-color: transparent;
   color: white;

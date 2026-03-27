@@ -36,9 +36,27 @@ const orderService = {
     return apiClient.post(`/v1/orders/${orderId}/confirm`);
   },
 
+  prepareShipment(orderId) {
+    return apiClient.post(`/v1/shipments/${orderId}/prepare`);
+  },
+
+  deliverShipment(orderId) {
+    return apiClient.post(`/v1/shipments/${orderId}/deliver`);
+  },
+
+  // [테스트 전용] 주문 상태를 PAYMENT_COMPLETED → SHIPPING 으로 강제 변경
+  forceShippingForTest(orderId) {
+    return apiClient.post(`/v1/test/orders/${orderId}/shipping`);
+  },
+
   // [테스트 전용] 주문 상태를 SHIPPING → DELIVERED 로 강제 변경
   forceDeliverForTest(orderId) {
     return apiClient.post(`/v1/test/orders/${orderId}/delivered`);
+  },
+
+  // [테스트 전용] 주문 상태를 DELIVERED → PURCHASE_CONFIRMED 로 강제 변경
+  forceConfirmForTest(orderId) {
+    return apiClient.post(`/v1/test/orders/${orderId}/confirm`);
   }
 };
 

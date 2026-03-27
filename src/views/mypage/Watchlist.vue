@@ -21,7 +21,7 @@ const fetchWatchlist = async () => {
 }
 
 const listings = computed(() => 
-  watchlist.value.filter(item => item.watchType === 'SALE_CARD')
+  watchlist.value.filter(item => item.watchType === 'SALE_CARD' && item.saleCard != null)
 )
 
 onMounted(fetchWatchlist)

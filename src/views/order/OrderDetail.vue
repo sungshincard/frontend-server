@@ -12,16 +12,17 @@ const order = ref(null)
 const loading = ref(true)
 const error = ref(null)
 
-const steps = ['PAYMENT_COMPLETED', 'SHIPPING', 'DELIVERED', 'PURCHASE_CONFIRMED']
 const statusLabelMap = {
   PENDING: '결제대기',
   PAYMENT_COMPLETED: '결제완료/발송대기',
+  PREPARING: '배송준비중',
   SHIPPING: '배송중',
   DELIVERED: '배송완료',
   PURCHASE_CONFIRMED: '구매확정',
   CANCELLED: '취소됨',
   DISPUTED: '분쟁중'
 }
+const steps = ['PAYMENT_COMPLETED', 'PREPARING', 'SHIPPING', 'DELIVERED', 'PURCHASE_CONFIRMED']
 
 const tradeTypeLabelMap = {
   SHIPPING: '택배거래',
@@ -31,15 +32,22 @@ const tradeTypeLabelMap = {
 const currentStepIndex = computed(() => {
   const map = {
     PAYMENT_COMPLETED: 0,
-    SHIPPING: 1,
-    DELIVERED: 2,
-    PURCHASE_CONFIRMED: 3
+    PREPARING: 1,
+    SHIPPING: 2,
+    DELIVERED: 3,
+    PURCHASE_CONFIRMED: 4
   }
   return map[order.value?.status] ?? -1
 })
 
-const isBuyer = computed(() => authStore.user?.nickname === order.value?.buyerNickname)
-const isSeller = computed(() => authStore.user?.nickname === order.value?.sellerNickname)
+const isBuyer = computed(() => {
+  if (!authStore.user) return false
+  return authStore.user.id == order.value?.buyerId || (!!authStore.user.nickname && authStore.user.nickname == order.value?.buyerNickname)
+})
+const isSeller = computed(() => {
+  if (!authStore.user) return false
+  return authStore.user.id == order.value?.sellerId || (!!authStore.user.nickname && authStore.user.nickname == order.value?.sellerNickname)
+})
 
 const fetchOrder = async () => {
   try {
@@ -69,6 +77,30 @@ const handleCancel = async () => {
   }
 }
 
+const handlePrepareShipment = async () => {
+  try {
+    if (confirm('배송 준비 상태로 변경하시겠습니까? 배송 정보 엔티티가 생성됩니다.')) {
+      await orderService.prepareShipment(order.value.id)
+      alert('배송 준비 중으로 변경되었습니다.')
+      fetchOrder()
+    }
+  } catch (err) {
+    alert('배송 준비 처리 중 오류가 발생했습니다: ' + (err.response?.data?.message || err.message))
+  }
+}
+
+const handleDeliver = async () => {
+  try {
+    if (confirm('주문을 배송 완료 상태로 변경하시겠습니까?')) {
+      await orderService.deliverShipment(order.value.id)
+      alert('배송 완료 처리되었습니다.')
+      fetchOrder()
+    }
+  } catch (err) {
+    alert('배송 완료 처리 중 오류가 발생했습니다: ' + (err.response?.data?.message || err.message))
+  }
+}
+
 const handleShipment = async () => {
   const carrier = prompt('택배사를 입력해 주세요 (예: CJ대한통운, 우체국 등)')
   if (!carrier) return
@@ -77,10 +109,10 @@ const handleShipment = async () => {
 
   try {
     await orderService.updateShipping(order.value.id, { carrier, trackingNumber })
-    alert('배송 정보가 등록되었습니다.')
+    alert('배송 중 상태로 변경되었습니다.')
     fetchOrder()
   } catch (err) {
-    alert('배송 정보 등록 중 오류가 발생했습니다.')
+    alert('배송 정보 등록 중 오류가 발생했습니다: ' + (err.response?.data?.message || err.message))
   }
 }
 
@@ -105,20 +137,6 @@ const handleConfirm = async () => {
   }
 }
 
-// [테스트 전용] 배송 완료 강제 처리
-const isDevMode = import.meta.env.DEV
-
-const handleForceDeliver = async () => {
-  try {
-    if (confirm('[테스트] 이 주문을 배송 완료 상태로 변경하시겠습니까?')) {
-      await orderService.forceDeliverForTest(order.value.id)
-      alert('테스트: 배송 완료 상태로 변경되었습니다.')
-      fetchOrder()
-    }
-  } catch (err) {
-    alert('배송 완료 처리 실패: ' + (err.response?.data?.message || err.message))
-  }
-}
 
 const goListing = () => {
   if (order.value?.saleCardId) router.push(`/saleCards/${order.value.saleCardId}`)
@@ -215,7 +233,9 @@ onMounted(fetchOrder)
           <button v-if="order.status === 'PAYMENT_COMPLETED'" type="button" class="cancel-btn" @click="handleCancel">주문 취소</button>
           
           <!-- 판매자 액션 -->
-          <button v-if="isSeller && order.status === 'PAYMENT_COMPLETED'" type="button" class="primary-btn" @click="handleShipment">송장 등록</button>
+          <button v-if="isSeller && order.status === 'PAYMENT_COMPLETED'" type="button" class="primary-btn" @click="handlePrepareShipment">배송 준비 중</button>
+          <button v-if="isSeller && order.status === 'PREPARING'" type="button" class="primary-btn" @click="handleShipment">배송 중으로 변경</button>
+          <button v-if="isSeller && order.status === 'SHIPPING'" type="button" class="primary-btn" @click="handleDeliver">배송 완료 처리</button>
           
           <!-- 구매자 액션 -->
           <button v-if="isBuyer && (
@@ -224,14 +244,6 @@ onMounted(fetchOrder)
           )" type="button" class="primary-btn" @click="handleConfirm">구매 확정</button>
           
           <button type="button" @click="goDispute">문의/분쟁</button>
-
-          <!-- [DEV 전용] 테스트: 배송 완료로 강제 변경 -->
-          <button
-            v-if="isDevMode && order.status === 'SHIPPING'"
-            type="button"
-            class="test-btn"
-            @click="handleForceDeliver"
-          >🛠️ 테스트: 배송완료로 변경</button>
         </div>
       </article>
     </section>
@@ -273,7 +285,7 @@ onMounted(fetchOrder)
   background: #e74c3c; color: #fff;
 }
 .section-head { margin-bottom: 20px; border-bottom: 1px solid var(--color-border); padding-bottom: 12px; }
-.timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.timeline { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .timeline-step {
   display: grid; gap: 10px; justify-items: center; color: var(--color-text-muted); font-size: 0.85rem;
 }

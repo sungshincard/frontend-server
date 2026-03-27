@@ -29,6 +29,7 @@ const filteredListings = computed(() => {
 
 const goDetail = (id) => router.push(`/sale-cards/${id}`)
 const goEdit = (id) => router.push(`/sale-cards/${id}/edit`)
+const goOrder = (orderId) => router.push(`/orders/${orderId}`)
 
 const fetchData = async () => {
   try {
@@ -89,6 +90,7 @@ onMounted(fetchData)
             <div class="actions">
               <button v-if="item.status === 'ACTIVE'" type="button" class="detail-button" @click="goEdit(item.id)">수정</button>
               <button type="button" class="detail-button" @click="goDetail(item.id)">상세 보기</button>
+              <button v-if="item.orderId" type="button" class="detail-button primary" @click="goOrder(item.orderId)">거래 보기</button>
             </div>
           </div>
         </article>
@@ -143,6 +145,10 @@ onMounted(fetchData)
 .actions { display: flex; gap: 8px; margin-top: 12px; }
 .detail-button {
   padding: 8px 16px; border: 1px solid var(--color-border); background: var(--color-background-elevated); color: var(--color-text-strong); border-radius: 999px; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.detail-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
 }
 .detail-button.primary { background: var(--color-primary); border-color: transparent; color: var(--color-primary-text); }
 
